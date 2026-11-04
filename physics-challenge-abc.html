@@ -1,0 +1,1175 @@
+<title>Physics Challenge</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:#0b1220; --surface:#121b2e; --surface-2:#1a2540; --surface-3:#223050;
+  --fg:#eef2fb; --muted:#93a0c2; --accent:#22d3c8; --accent-fg:#06282a;
+  --border:#253252;
+  --easy:#34d399; --easy-fg:#06281c; --medium:#f59e0b; --medium-fg:#2b1700; --hard:#f87171; --hard-fg:#2b0a0a;
+  --good:#34d399; --bad:#f87171; --streak:#fbbf24;
+  --t-conv:#3b82f6; --t-vec:#a855f7; --t-vel:#22c55e; --t-acc:#f59e0b; --t-fall:#f43f5e;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f6fb; --surface:#ffffff; --surface-2:#eef1f8; --surface-3:#e3e8f4;
+    --fg:#121a2e; --muted:#5b6682; --accent:#0f9c91; --accent-fg:#ffffff;
+    --border:#d8deed;
+    --easy:#0f9c6e; --easy-fg:#ffffff; --medium:#b4790a; --medium-fg:#ffffff; --hard:#d1483f; --hard-fg:#ffffff;
+    --good:#0f9c6e; --bad:#d1483f; --streak:#b4790a;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f6fb; --surface:#ffffff; --surface-2:#eef1f8; --surface-3:#e3e8f4;
+  --fg:#121a2e; --muted:#5b6682; --accent:#0f9c91; --accent-fg:#ffffff;
+  --border:#d8deed;
+  --easy:#0f9c6e; --easy-fg:#ffffff; --medium:#b4790a; --medium-fg:#ffffff; --hard:#d1483f; --hard-fg:#ffffff;
+  --good:#0f9c6e; --bad:#d1483f; --streak:#b4790a;
+  color-scheme: light;
+}
+*{box-sizing:border-box;}
+body{background:var(--bg); color:var(--fg); font-family:"Source Sans 3",system-ui,sans-serif; padding-inline:16px;}
+h1,h2,h3{font-family:"Big Shoulders Display",system-ui,sans-serif; letter-spacing:.01em; text-wrap:balance; margin:0;}
+.mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;}
+#app{max-width:760px; margin:0 auto; padding-block:24px 48px; min-width:0;}
+p{color:var(--muted); line-height:1.55; margin:0;}
+.btn{font-family:"Source Sans 3",sans-serif; font-weight:700; font-size:15px; padding:13px 22px; border-radius:11px; border:1px solid var(--border); background:var(--surface-2); color:var(--fg); cursor:pointer; transition:transform .08s ease, border-color .15s ease;}
+.btn:hover{border-color:var(--accent);}
+.btn:active{transform:scale(.96);}
+.btn.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-size:16px;}
+.btn:disabled{opacity:.4; cursor:not-allowed;}
+.btn-block{width:100%;}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent);}
+.card{background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:26px 22px;}
+@keyframes slideIn{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+.card.q-card{animation:slideIn .28s ease;}
+@keyframes popIn{from{transform:scale(.9); opacity:0;} to{transform:scale(1); opacity:1;}}
+/* ---------- start screen ---------- */
+.hero{text-align:center; padding-block:28px 8px;}
+.hero h1{font-size:clamp(28px,6vw,40px);}
+.hero p{max-width:50ch; margin-inline:auto; margin-top:10px;}
+.scoring-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-block:18px;}
+.scoring-chip{border-radius:12px; padding:14px 10px; text-align:center; border:1px solid var(--border);}
+.scoring-chip .lvl{font-family:"IBM Plex Mono",monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:600;}
+.scoring-chip .pts{font-family:"Big Shoulders Display",sans-serif; font-size:26px; font-weight:800; margin-top:2px;}
+.scoring-chip.easy{background:color-mix(in srgb, var(--easy) 16%, var(--surface));}
+.scoring-chip.medium{background:color-mix(in srgb, var(--medium) 16%, var(--surface));}
+.scoring-chip.hard{background:color-mix(in srgb, var(--hard) 16%, var(--surface));}
+.bonus-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;}
+.bonus-chip{flex:1 1 180px; border-radius:11px; padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); font-size:12.5px; display:flex; align-items:center; gap:8px;}
+.bonus-chip .ic{font-size:18px;}
+.qtype-legend{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+.qtype-pill{font-family:"IBM Plex Mono",monospace; font-size:11px; padding:5px 10px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); color:var(--muted);}
+.stat-row{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-block:16px;}
+.stat{text-align:center;}
+.stat .num{font-family:"Big Shoulders Display",sans-serif; font-size:28px; font-weight:800;}
+.stat .lbl{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;}
+/* ---------- quiz screen ---------- */
+.topbar{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
+.progress-wrap{flex:1 1 160px; min-width:0;}
+.progress-track{height:8px; border-radius:99px; background:var(--surface-3); overflow:hidden;}
+.progress-fill{height:100%; background:var(--accent); border-radius:99px; transition:width .25s ease;}
+.progress-label{font-size:12px; color:var(--muted); margin-top:4px; display:flex; gap:10px; align-items:center;}
+.streak-tag{font-family:"IBM Plex Mono",monospace; font-weight:700; color:var(--streak); display:inline-flex; align-items:center; gap:3px;}
+.score-badge{font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:15px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:7px 12px; white-space:nowrap; transition:transform .15s ease;}
+.score-badge.bump{transform:scale(1.12);}
+.badge-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+.badge{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:5px 10px; border-radius:999px; color:#fff;}
+.badge.diff-easy{background:var(--easy); color:var(--easy-fg);}
+.badge.diff-medium{background:var(--medium); color:var(--medium-fg);}
+.badge.diff-hard{background:var(--hard); color:var(--hard-fg);}
+.badge.pts{background:var(--surface-3); color:var(--fg); border:1px solid var(--border);}
+.q-type{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;}
+.q-text{font-size:21px; font-weight:700; line-height:1.3; margin-block:10px 14px;}
+.timer-track{height:4px; border-radius:99px; background:var(--surface-3); overflow:hidden; margin-bottom:16px;}
+.timer-fill{height:100%; background:var(--streak); border-radius:99px; width:100%; transform-origin:left; animation:timerShrink linear forwards; animation-duration:8s;}
+@keyframes timerShrink{to{width:0%;}}
+.options{display:flex; flex-direction:column; gap:10px;}
+.opt-btn{display:flex; align-items:center; gap:10px; text-align:left; padding:13px 14px; border-radius:12px; border:1.5px solid var(--border); background:var(--surface-2); color:var(--fg); font-size:15px; cursor:pointer; font-family:inherit; transition:transform .1s ease, border-color .15s ease;}
+.opt-btn:hover:not(:disabled){border-color:var(--accent);}
+.opt-btn:active:not(:disabled){transform:scale(.98);}
+.opt-btn .letter{font-family:"IBM Plex Mono",monospace; font-weight:700; color:var(--muted); flex:none;}
+.opt-btn:disabled{cursor:default;}
+.opt-btn.correct{border-color:var(--good); background:color-mix(in srgb, var(--good) 20%, var(--surface-2)); animation:popIn .2s ease;}
+.opt-btn.wrong{border-color:var(--bad); background:color-mix(in srgb, var(--bad) 20%, var(--surface-2));}
+.calc-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+input[type="number"]{font-family:"IBM Plex Mono",monospace; font-size:17px; padding:12px 14px; border-radius:11px; border:1.5px solid var(--border); background:var(--surface-2); color:var(--fg); width:160px; max-width:100%;}
+input[type="number"]:focus{outline:none; border-color:var(--accent);}
+.unit-label{color:var(--muted); font-family:"IBM Plex Mono",monospace;}
+.feedback{margin-top:16px; border-radius:12px; padding:14px 16px; border:1px solid var(--border); animation:slideIn .2s ease;}
+.feedback.ok{border-color:var(--good); background:color-mix(in srgb, var(--good) 14%, var(--surface));}
+.feedback.no{border-color:var(--bad); background:color-mix(in srgb, var(--bad) 14%, var(--surface));}
+.feedback .verdict{font-weight:700; margin-bottom:6px;}
+.feedback .bonus-line{font-size:12.5px; color:var(--streak); font-weight:700; margin-bottom:6px;}
+.feedback .detail{font-size:13.5px; color:var(--fg); opacity:.9; line-height:1.5;}
+.feedback .detail b{font-family:"IBM Plex Mono",monospace;}
+.nav-row{margin-top:18px; display:flex; justify-content:flex-end;}
+/* ---------- end screen ---------- */
+.score-hero{text-align:center; padding-block:20px 6px;}
+.score-hero .big{font-family:"Big Shoulders Display",sans-serif; font-size:56px; font-weight:800; line-height:1;}
+.score-hero .of{color:var(--muted); font-size:15px; margin-top:4px;}
+.newbest{display:inline-block; margin-top:8px; font-family:"IBM Plex Mono",monospace; font-size:12px; background:var(--accent); color:var(--accent-fg); padding:5px 12px; border-radius:999px;}
+.celebrate{margin-top:10px; font-size:13.5px; color:var(--streak); font-weight:700;}
+.topic-table{width:100%; border-collapse:collapse; margin-top:10px; font-size:13.5px;}
+.topic-table th, .topic-table td{text-align:left; padding:8px 6px; border-bottom:1px solid var(--border);}
+.topic-table th{color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em;}
+.topic-dot{width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:6px;}
+.review-item{border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-top:10px;}
+.review-item .q{font-weight:700; font-size:14px; margin-bottom:4px;}
+.review-item .meta{font-size:12px; color:var(--muted); margin-bottom:6px;}
+.end-actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;}
+.section-title{font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:26px; margin-bottom:4px;}
+/* ---------- name field + send-to-teacher ---------- */
+.name-field{margin-block:16px; text-align:left;}
+.name-field label{display:block; margin-bottom:6px;}
+input[type="text"]{font-family:"Source Sans 3",sans-serif; font-size:16px; padding:12px 14px; border-radius:11px; border:1.5px solid var(--border); background:var(--surface-2); color:var(--fg); width:100%;}
+input[type="text"]:focus{outline:none; border-color:var(--accent);}
+.name-error{color:var(--bad); font-size:13px; margin-top:6px;}
+.submit-card{margin-top:18px; border-top:1px dashed var(--border); padding-top:18px;}
+.submit-card p{font-size:13.5px;}
+.result-row{width:100%; font-family:"IBM Plex Mono",monospace; font-size:12.5px; padding:12px 14px; border-radius:11px; border:1.5px solid var(--border); background:var(--surface-2); color:var(--fg); resize:none; margin-top:10px;}
+.result-cols{font-size:11.5px; color:var(--muted); margin-top:8px;}
+.copy-status{font-size:12.5px; color:var(--good); margin-top:8px; font-weight:600;}
+/* ---------- vocab home ---------- */
+.vocab-link{display:block; width:100%; text-align:center; margin-top:10px; background:none; border:none; color:var(--accent); font-family:"Source Sans 3",sans-serif; font-weight:700; font-size:14px; cursor:pointer; padding:6px;}
+.mode-grid{display:flex; flex-direction:column; gap:12px; margin-top:18px;}
+.mode-card{display:flex; align-items:center; gap:14px; text-align:left; border-radius:14px; border:1.5px solid var(--border); background:var(--surface-2); padding:16px; cursor:pointer; font-family:inherit; color:var(--fg); width:100%;}
+.mode-card:hover{border-color:var(--accent);}
+.mode-card .ic{font-size:28px; flex:none;}
+.mode-card .txt{flex:1; min-width:0;}
+.mode-card .txt b{display:block; font-size:16px;}
+.mode-card .txt span{font-size:13px; color:var(--muted);}
+.back-link{background:none; border:none; color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:12px; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; padding:4px 0; margin-bottom:10px; display:inline-flex; align-items:center; gap:4px;}
+.back-link:hover{color:var(--accent);}
+/* ---------- word search ---------- */
+.ws-wordlist{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0;}
+.ws-chip{font-family:"IBM Plex Mono",monospace; font-size:11px; padding:5px 10px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); color:var(--fg);}
+.ws-chip.found{background:var(--good); color:#fff; border-color:transparent; text-decoration:line-through; opacity:.75;}
+.ws-grid-wrap{max-width:460px; margin:0 auto;}
+.ws-grid{display:grid; gap:2px; touch-action:none; user-select:none;}
+.ws-cell{aspect-ratio:1; display:flex; align-items:center; justify-content:center; background:var(--surface-2); border:1px solid var(--border); border-radius:4px; font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:11px; color:var(--fg); cursor:pointer;}
+.ws-cell.selecting{background:var(--accent); color:var(--accent-fg); border-color:transparent;}
+.ws-cell.found{background:var(--good); color:#fff; border-color:transparent;}
+/* ---------- crossword ---------- */
+.cw-grid-wrap{max-width:420px; margin:0 auto; overflow-x:auto;}
+.cw-grid{display:grid; gap:2px; width:max-content; margin:0 auto;}
+.cw-cell{width:28px; height:28px; position:relative;}
+.cw-cell.blocked{visibility:hidden;}
+.cw-cell input{width:100%; height:100%; text-align:center; text-transform:uppercase; font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:14px; padding:0; border-radius:4px; border:1.5px solid var(--border); background:var(--surface-2); color:var(--fg);}
+.cw-cell input:focus{outline:none; border-color:var(--accent);}
+.cw-cell input.correct{border-color:var(--good); background:color-mix(in srgb, var(--good) 20%, var(--surface-2));}
+.cw-cell input.wrong{border-color:var(--bad); background:color-mix(in srgb, var(--bad) 20%, var(--surface-2));}
+.cw-num{position:absolute; top:-1px; left:2px; font-size:8px; font-family:"IBM Plex Mono",monospace; color:var(--muted); line-height:1; pointer-events:none;}
+.clue-cols{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px;}
+@media (max-width:480px){.clue-cols{grid-template-columns:1fr;}}
+.clue-list{list-style:none; padding:0; margin:8px 0 0;}
+.clue-list li{font-size:13px; margin-bottom:8px; line-height:1.4;}
+.clue-list b{font-family:"IBM Plex Mono",monospace; color:var(--accent); margin-right:4px;}
+/* ---------- type the term ---------- */
+.tt-prompt{font-size:16px; line-height:1.45; margin-block:4px 16px;}
+/* ---------- inline bonus rounds ---------- */
+.bonus-card{border-color:var(--streak);}
+.bcw-row{display:flex; gap:6px; flex-wrap:wrap;}
+.bcw-row input{width:34px; height:34px; text-align:center; text-transform:uppercase; font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:16px; padding:0; border-radius:6px; border:1.5px solid var(--border); background:var(--surface-2); color:var(--fg);}
+.bcw-row input:focus{outline:none; border-color:var(--accent);}
+.bcw-row input.correct{border-color:var(--good); background:color-mix(in srgb, var(--good) 20%, var(--surface-2));}
+.bcw-row input.wrong{border-color:var(--bad); background:color-mix(in srgb, var(--bad) 20%, var(--surface-2));}
+[hidden]{display:none!important;}
+</style>
+<div id="app"></div>
+<script>
+(function(){
+"use strict";
+
+var QUESTION_BANK = [{"topic": "Unit Conversions", "type": "theory", "difficulty": "easy", "points": 10, "q": "A conversion factor is a ratio that is always equal to which number?", "options": ["1", "0", "10", "100"], "correct": 0, "id": 1}, {"topic": "Unit Conversions", "type": "theory", "difficulty": "easy", "points": 10, "q": "Which SI prefix means × 1000?", "options": ["kilo-", "milli-", "centi-", "mega-"], "correct": 0, "id": 2}, {"topic": "Unit Conversions", "type": "theory", "difficulty": "easy", "points": 10, "q": "Which SI prefix means × 0.001?", "options": ["milli-", "kilo-", "deci-", "micro-"], "correct": 0, "id": 3}, {"topic": "Unit Conversions", "type": "theory", "difficulty": "easy", "points": 10, "q": "How many meters are in one kilometer?", "options": ["1000", "100", "10000", "1"], "correct": 0, "id": 4}, {"topic": "Unit Conversions", "type": "theory", "difficulty": "easy", "points": 10, "q": "How many seconds are in one hour?", "options": ["3600", "60", "600", "360"], "correct": 0, "id": 5}, {"topic": "Unit Conversions", "type": "theory", "difficulty": "medium", "points": 20, "q": "To go from km/h to m/s, by what single number can you divide?", "options": ["3.6", "1000", "3600", "0.36"], "correct": 0, "id": 6}, {"topic": "Unit Conversions", "type": "theory", "difficulty": "medium", "points": 20, "q": "To go from m/s to km/h, by what single number do you multiply?", "options": ["3.6", "1000", "3600", "0.36"], "correct": 0, "id": 7}, {"topic": "Unit Conversions", "type": "theory", "difficulty": "medium", "points": 20, "q": "What is the SI (international system) base unit of speed?", "options": ["m/s", "km/h", "mi/h", "cm/s"], "correct": 0, "id": 8}, {"topic": "Unit Conversions", "type": "theory", "difficulty": "hard", "points": 30, "q": "In a dimensional-analysis chain like X km × (1000 m/1 km) × (100 cm/1 m), why do \"km\" and \"m\" cancel out?", "options": ["Because each conversion factor equals 1, so multiplying by it doesn't change the quantity, only its units", "Because km and m are the same unit written differently", "Because multiplication always cancels matching letters", "Because the problem tells you to cancel them"], "correct": 0, "id": 9}, {"topic": "Unit Conversions", "type": "theory", "difficulty": "hard", "points": 30, "q": "You need to convert a speed given in mi/h directly to m/s. What is the most reliable way to do it?", "options": ["Chain two factors: multiply by 1.609 km/mi, then convert that km/h result to m/s", "Multiply directly by 3.6, the same shortcut used for km/h ↔ m/s", "Multiply by 1000, since mi and km are both “big” distance units", "It cannot be done in one dimensional-analysis chain"], "correct": 0, "id": 10}, {"topic": "Vector Components", "type": "theory", "difficulty": "easy", "points": 10, "q": "Which formula gives the x-component of a vector?", "options": ["Fx = F cosθ", "Fx = F sinθ", "Fx = F tanθ", "Fx = F/θ"], "correct": 0, "id": 11}, {"topic": "Vector Components", "type": "theory", "difficulty": "easy", "points": 10, "q": "Which formula gives the y-component of a vector?", "options": ["Fy = F sinθ", "Fy = F cosθ", "Fy = F tanθ", "Fy = F/θ"], "correct": 0, "id": 12}, {"topic": "Vector Components", "type": "theory", "difficulty": "easy", "points": 10, "q": "If a vector lies exactly on the positive x-axis (θ = 0°), what are its components?", "options": ["Fx = F, Fy = 0", "Fx = 0, Fy = F", "Fx = F, Fy = F", "Fx = 0, Fy = 0"], "correct": 0, "id": 13}, {"topic": "Vector Components", "type": "theory", "difficulty": "easy", "points": 10, "q": "If a vector lies exactly on the positive y-axis (θ = 90°), what are its components?", "options": ["Fx = 0, Fy = F", "Fx = F, Fy = 0", "Fx = F, Fy = F", "Fx = 0, Fy = 0"], "correct": 0, "id": 14}, {"topic": "Vector Components", "type": "theory", "difficulty": "medium", "points": 20, "q": "In which quadrant are BOTH components of a vector negative?", "options": ["Quadrant III (180°–270°)", "Quadrant I (0°–90°)", "Quadrant II (90°–180°)", "Quadrant IV (270°–360°)"], "correct": 0, "id": 15}, {"topic": "Vector Components", "type": "theory", "difficulty": "medium", "points": 20, "q": "In which quadrant is the x-component negative and the y-component positive?", "options": ["Quadrant II (90°–180°)", "Quadrant I (0°–90°)", "Quadrant III (180°–270°)", "Quadrant IV (270°–360°)"], "correct": 0, "id": 16}, {"topic": "Vector Components", "type": "theory", "difficulty": "medium", "points": 20, "q": "In which quadrant is the x-component positive and the y-component negative?", "options": ["Quadrant IV (270°–360°)", "Quadrant I (0°–90°)", "Quadrant II (90°–180°)", "Quadrant III (180°–270°)"], "correct": 0, "id": 17}, {"topic": "Vector Components", "type": "theory", "difficulty": "medium", "points": 20, "q": "Which trig ratio relates the angle to opposite/hypotenuse?", "options": ["sine", "cosine", "tangent", "secant"], "correct": 0, "id": 18}, {"topic": "Vector Components", "type": "theory", "difficulty": "hard", "points": 30, "q": "A vector's x-component is positive and its y-component is exactly zero. What is its angle?", "options": ["0° (or 360°)", "90°", "180°", "270°"], "correct": 0, "id": 19}, {"topic": "Vector Components", "type": "theory", "difficulty": "hard", "points": 30, "q": "Why do we decompose vectors into x and y components before adding several of them together?", "options": ["Because components along the same axis add like ordinary numbers, which isn't true for the original vectors", "Because only components can be measured with a ruler", "Because angles cannot be added directly under any circumstance", "Because decomposing always makes the magnitude smaller"], "correct": 0, "id": 20}, {"topic": "Velocity (Uniform Motion)", "type": "theory", "difficulty": "easy", "points": 10, "q": "What is the formula for average velocity?", "options": ["v = d/t", "v = d × t", "v = t/d", "v = d + t"], "correct": 0, "id": 21}, {"topic": "Velocity (Uniform Motion)", "type": "theory", "difficulty": "easy", "points": 10, "q": "What is the SI unit of velocity?", "options": ["m/s", "km/h", "m", "s"], "correct": 0, "id": 22}, {"topic": "Velocity (Uniform Motion)", "type": "theory", "difficulty": "easy", "points": 10, "q": "On a position-vs-time graph for uniform motion, what shape is the graph?", "options": ["A straight line", "A parabola", "A horizontal line at zero", "A circle"], "correct": 0, "id": 23}, {"topic": "Velocity (Uniform Motion)", "type": "theory", "difficulty": "medium", "points": 20, "q": "What does the slope of a position-vs-time graph represent?", "options": ["Velocity", "Acceleration", "Distance", "Time"], "correct": 0, "id": 24}, {"topic": "Velocity (Uniform Motion)", "type": "theory", "difficulty": "medium", "points": 20, "q": "What is the key difference between speed and velocity?", "options": ["Velocity includes direction; speed is just the magnitude", "They are exactly the same thing", "Speed includes direction; velocity does not", "Velocity is always larger than speed"], "correct": 0, "id": 25}, {"topic": "Velocity (Uniform Motion)", "type": "theory", "difficulty": "medium", "points": 20, "q": "If an object covers equal distances in equal time intervals, what type of motion is this?", "options": ["Uniform (constant-velocity) motion", "Uniformly accelerated motion", "Free fall", "Projectile motion"], "correct": 0, "id": 26}, {"topic": "Velocity (Uniform Motion)", "type": "theory", "difficulty": "medium", "points": 20, "q": "If velocity is constant, what is the object's acceleration?", "options": ["Zero", "Equal to the velocity", "Always 9.8 m/s²", "Impossible to determine"], "correct": 0, "id": 27}, {"topic": "Velocity (Uniform Motion)", "type": "theory", "difficulty": "hard", "points": 30, "q": "A car drives half of a trip's distance at one constant speed and the other half at a different constant speed. Is the average speed for the whole trip simply the arithmetic mean of the two speeds?", "options": ["No — because more time is spent at the slower speed, the average must be weighted by time, not distance", "Yes, averaging two speeds is always just (v1+v2)/2", "No, because speed can never be averaged", "Yes, but only if the distances are different"], "correct": 0, "id": 28}, {"topic": "Velocity (Uniform Motion)", "type": "theory", "difficulty": "hard", "points": 30, "q": "Can an object have a changing position but a velocity of exactly zero at one specific instant?", "options": ["Yes — for example, the instant it reverses direction", "No, velocity is zero only if the object never moves", "No, position and velocity must always change together", "Yes, but only in free fall"], "correct": 0, "id": 29}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "easy", "points": 10, "q": "What is the formula for acceleration given initial velocity, final velocity, and time?", "options": ["a = (Vf − Vi) / t", "a = Vf × t", "a = Vi / t", "a = (Vf + Vi) × t"], "correct": 0, "id": 30}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "easy", "points": 10, "q": "What is the SI unit of acceleration?", "options": ["m/s²", "m/s", "m", "s²"], "correct": 0, "id": 31}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "easy", "points": 10, "q": "If Vi = 0 in the formula d = Vi·t + ½·a·t², which term disappears?", "options": ["The Vi·t term", "The ½·a·t² term", "Both terms disappear", "Neither term disappears"], "correct": 0, "id": 32}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "medium", "points": 20, "q": "On a velocity-vs-time graph, what does the slope represent?", "options": ["Acceleration", "Velocity", "Distance", "Time"], "correct": 0, "id": 33}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "medium", "points": 20, "q": "On a velocity-vs-time graph, what does the area under the curve represent?", "options": ["Distance (displacement)", "Acceleration", "Average velocity only", "Nothing physical"], "correct": 0, "id": 34}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "medium", "points": 20, "q": "What does a negative acceleration mean for an object that is moving forward?", "options": ["The object is slowing down (decelerating)", "The object is speeding up", "The object has stopped permanently", "The object is moving backward in time"], "correct": 0, "id": 35}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "medium", "points": 20, "q": "Which UAM formula should you use when time is NOT given, but distance is?", "options": ["Vf² = Vi² + 2·a·d", "a = (Vf − Vi)/t", "d = v·t", "Vf = Vi × t"], "correct": 0, "id": 36}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "hard", "points": 30, "q": "A problem gives you Vi, Vf, and d, but asks for the time t. The direct formula for t needs ‘a’, which isn’t given. What's the correct strategy?", "options": ["First solve Vf² = Vi² + 2·a·d for a, then use a = (Vf−Vi)/t to solve for t", "It's impossible without more data", "Just divide d by Vf directly", "Average Vi and Vf, then divide t by that average"], "correct": 0, "id": 37}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "hard", "points": 30, "q": "Can an object have zero acceleration while still changing velocity?", "options": ["No — by definition, any change in velocity over time requires nonzero acceleration", "Yes, if the velocity change is very small", "Yes, if time is also zero", "Yes, if the object is in free fall"], "correct": 0, "id": 38}, {"topic": "Acceleration (UAM)", "type": "theory", "difficulty": "hard", "points": 30, "q": "Two UAM formulas both solve for distance d: d = Vi·t + ½·a·t² and one derived from Vf² = Vi² + 2·a·d. Which data would make the SECOND one more convenient to use?", "options": ["Vi, Vf, and a are known, but t is not", "Vi, t, and a are known, but Vf is not", "Only t is known", "None of the variables are known"], "correct": 0, "id": 39}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "easy", "points": 10, "q": "What is the approximate value of g, the acceleration due to gravity, near Earth's surface?", "options": ["9.8 m/s²", "9.8 m/s", "1 m/s²", "3.6 m/s²"], "correct": 0, "id": 40}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "easy", "points": 10, "q": "Does an object's mass affect its free-fall acceleration (ignoring air resistance)?", "options": ["No, all objects fall with the same acceleration g", "Yes, heavier objects fall faster", "Yes, lighter objects fall faster", "Only above a certain mass"], "correct": 0, "id": 41}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "easy", "points": 10, "q": "At the highest point of a ball thrown straight up, what is its velocity?", "options": ["Zero", "Equal to g", "Equal to its launch velocity", "Undefined"], "correct": 0, "id": 42}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "medium", "points": 20, "q": "At the highest point of a ball thrown straight up, is its acceleration zero?", "options": ["No, it's still g, pointing downward", "Yes, acceleration is zero at the top", "No, acceleration briefly reverses to point upward", "Acceleration only exists while moving"], "correct": 0, "id": 43}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "medium", "points": 20, "q": "If up is taken as the positive direction, what sign does g have in free-fall equations?", "options": ["Negative", "Positive", "It has no sign, only magnitude", "It depends on the object's mass"], "correct": 0, "id": 44}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "medium", "points": 20, "q": "For a ball thrown up and caught at the same height it was launched from, how does the time going up compare to the time coming down?", "options": ["They are equal", "Going up takes longer", "Coming down takes longer", "There is no relationship"], "correct": 0, "id": 45}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "medium", "points": 20, "q": "For a ball thrown up and caught at the same height, how does its launch speed compare to its speed right before landing?", "options": ["They have the same magnitude (opposite direction)", "The landing speed is always greater", "The launch speed is always greater", "They cannot be compared"], "correct": 0, "id": 46}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "hard", "points": 30, "q": "Why is free fall considered a special case of uniformly accelerated motion (UAM)?", "options": ["Because the acceleration (g) is constant, just like the constant 'a' in the general UAM formulas", "Because free fall has no acceleration at all", "Because free fall only applies to horizontal motion", "Because UAM formulas don't apply to falling objects"], "correct": 0, "id": 47}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "hard", "points": 30, "q": "A ball is thrown straight up and caught at the exact same height. Compare its velocity at launch to its velocity at the moment of catching.", "options": ["Same magnitude, opposite direction", "Same magnitude, same direction", "Landing velocity is always smaller", "They cannot be compared without the mass"], "correct": 0, "id": 48}, {"topic": "Free Fall & Vertical Throw", "type": "theory", "difficulty": "hard", "points": 30, "q": "Which formula would you use to find the time of flight for an object dropped from rest, given only the height it fell?", "options": ["t = √(2·d / g)", "t = d / g", "t = 2·g / d", "t = g / d"], "correct": 0, "id": 49}, {"topic": "Unit Conversions", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given v[km/h] = v[m/s] × 3.6, which equation correctly solves for v[m/s]?", "options": ["v[m/s] = v[km/h] ÷ 3.6", "v[m/s] = v[km/h] × 3.6", "v[m/s] = 3.6 ÷ v[km/h]", "v[m/s] = v[km/h] − 3.6"], "correct": 0, "id": 50}, {"topic": "Unit Conversions", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given L[cm] = L[km] × 100000, which equation correctly solves for L[km]?", "options": ["L[km] = L[cm] ÷ 100000", "L[km] = L[cm] × 100000", "L[km] = 100000 ÷ L[cm]", "L[km] = L[cm] − 100000"], "correct": 0, "id": 51}, {"topic": "Unit Conversions", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given t[s] = t[h] × 3600, which equation correctly solves for t[h]?", "options": ["t[h] = t[s] ÷ 3600", "t[h] = t[s] × 3600", "t[h] = 3600 ÷ t[s]", "t[h] = t[s] + 3600"], "correct": 0, "id": 52}, {"topic": "Vector Components", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Fx = F cosθ, which equation correctly solves for F?", "options": ["F = Fx ÷ cosθ", "F = Fx × cosθ", "F = cosθ ÷ Fx", "F = Fx − cosθ"], "correct": 0, "id": 53}, {"topic": "Vector Components", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Fy = F sinθ, which equation correctly solves for F?", "options": ["F = Fy ÷ sinθ", "F = Fy × sinθ", "F = sinθ ÷ Fy", "F = Fy − sinθ"], "correct": 0, "id": 54}, {"topic": "Vector Components", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Fx = F cosθ, which equation correctly solves for cosθ?", "options": ["cosθ = Fx ÷ F", "cosθ = F ÷ Fx", "cosθ = Fx × F", "cosθ = F − Fx"], "correct": 0, "id": 55}, {"topic": "Vector Components", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Fy = F sinθ, which equation correctly solves for sinθ?", "options": ["sinθ = Fy ÷ F", "sinθ = F ÷ Fy", "sinθ = Fy × F", "sinθ = F − Fy"], "correct": 0, "id": 56}, {"topic": "Vector Components", "type": "despeje", "difficulty": "hard", "points": 30, "q": "Given F = √(Fx² + Fy²), which equation correctly solves for Fx?", "options": ["Fx = √(F² − Fy²)", "Fx = F² − Fy²", "Fx = √(F² + Fy²)", "Fx = √F − Fy"], "correct": 0, "id": 57}, {"topic": "Vector Components", "type": "despeje", "difficulty": "hard", "points": 30, "q": "Given F = √(Fx² + Fy²), which equation correctly solves for Fy?", "options": ["Fy = √(F² − Fx²)", "Fy = F² − Fx²", "Fy = √(F² + Fx²)", "Fy = √F − Fx"], "correct": 0, "id": 58}, {"topic": "Velocity (Uniform Motion)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given v = d / t, which equation correctly solves for d?", "options": ["d = v × t", "d = v ÷ t", "d = t ÷ v", "d = v − t"], "correct": 0, "id": 59}, {"topic": "Velocity (Uniform Motion)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given v = d / t, which equation correctly solves for t?", "options": ["t = d ÷ v", "t = v ÷ d", "t = d × v", "t = v − d"], "correct": 0, "id": 60}, {"topic": "Velocity (Uniform Motion)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "A train's speed is found with v = d / t. If you only know the speed and the time, which equation gives the distance traveled?", "options": ["d = v × t", "d = v ÷ t", "d = t ÷ v", "d = v + t"], "correct": 0, "id": 61}, {"topic": "Velocity (Uniform Motion)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "A pilot measures distance and speed mid-flight. Given v = d / t, which equation gives the flight time?", "options": ["t = d ÷ v", "t = v ÷ d", "t = d × v", "t = d + v"], "correct": 0, "id": 62}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given a = (Vf − Vi) / t, which equation correctly solves for Vf?", "options": ["Vf = Vi + a·t", "Vf = Vi − a·t", "Vf = a·t − Vi", "Vf = (Vi + t) ÷ a"], "correct": 0, "id": 63}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given a = (Vf − Vi) / t, which equation correctly solves for Vi?", "options": ["Vi = Vf − a·t", "Vi = Vf + a·t", "Vi = a·t − Vf", "Vi = (Vf − t) ÷ a"], "correct": 0, "id": 64}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given a = (Vf − Vi) / t, which equation correctly solves for t?", "options": ["t = (Vf − Vi) ÷ a", "t = a ÷ (Vf − Vi)", "t = (Vf − Vi) × a", "t = Vf − Vi − a"], "correct": 0, "id": 65}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Vf = Vi + a·t, which equation correctly solves for Vi?", "options": ["Vi = Vf − a·t", "Vi = Vf + a·t", "Vi = a·t − Vf", "Vi = Vf ÷ (a·t)"], "correct": 0, "id": 66}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Vf = Vi + a·t, which equation correctly solves for a?", "options": ["a = (Vf − Vi) ÷ t", "a = (Vi − Vf) ÷ t", "a = (Vf − Vi) × t", "a = Vf − Vi − t"], "correct": 0, "id": 67}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Vf = Vi + a·t, which equation correctly solves for t?", "options": ["t = (Vf − Vi) ÷ a", "t = (Vi − Vf) ÷ a", "t = (Vf − Vi) × a", "t = a ÷ (Vf − Vi)"], "correct": 0, "id": 68}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given d = Vi·t + ½·a·t², which equation correctly isolates the Vi·t term, as a first step to solve for Vi?", "options": ["Vi·t = d − ½·a·t²", "Vi·t = d + ½·a·t²", "Vi·t = ½·a·t² − d", "Vi·t = d × ½·a·t²"], "correct": 0, "id": 69}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Vf² = Vi² + 2·a·d, which equation correctly solves for Vi²?", "options": ["Vi² = Vf² − 2·a·d", "Vi² = Vf² + 2·a·d", "Vi² = 2·a·d − Vf²", "Vi² = Vf² × 2·a·d"], "correct": 0, "id": 70}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Vf² = Vi² + 2·a·d, which equation correctly solves for a?", "options": ["a = (Vf² − Vi²) ÷ (2·d)", "a = (Vi² − Vf²) ÷ (2·d)", "a = (Vf² − Vi²) × 2·d", "a = 2·d ÷ (Vf² − Vi²)"], "correct": 0, "id": 71}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Vf² = Vi² + 2·a·d, which equation correctly solves for d?", "options": ["d = (Vf² − Vi²) ÷ (2·a)", "d = (Vi² − Vf²) ÷ (2·a)", "d = (Vf² − Vi²) × 2·a", "d = 2·a ÷ (Vf² − Vi²)"], "correct": 0, "id": 72}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "hard", "points": 30, "q": "Given Vf² = Vi² + 2·a·d, which equation correctly solves for Vf?", "options": ["Vf = √(Vi² + 2·a·d)", "Vf = Vi² + 2·a·d", "Vf = √Vi + 2·a·d", "Vf = √(Vi + 2·a·d)"], "correct": 0, "id": 73}, {"topic": "Acceleration (UAM)", "type": "despeje", "difficulty": "medium", "points": 20, "q": "A problem gives Vi, Vf, and t, and asks for acceleration. Given a = (Vf − Vi)/t, which setup is correct?", "options": ["a = (Vf − Vi) ÷ t", "a = (Vi − Vf) ÷ t", "a = (Vf − Vi) × t", "a = t ÷ (Vf − Vi)"], "correct": 0, "id": 74}, {"topic": "Free Fall & Vertical Throw", "type": "despeje", "difficulty": "medium", "points": 20, "q": "For a dropped object (down = positive), Vf = Vi + g·t. Which equation correctly solves for Vi?", "options": ["Vi = Vf − g·t", "Vi = Vf + g·t", "Vi = g·t − Vf", "Vi = Vf ÷ (g·t)"], "correct": 0, "id": 75}, {"topic": "Free Fall & Vertical Throw", "type": "despeje", "difficulty": "medium", "points": 20, "q": "For a dropped object (down = positive), Vf = Vi + g·t. Which equation correctly solves for t?", "options": ["t = (Vf − Vi) ÷ g", "t = (Vi − Vf) ÷ g", "t = (Vf − Vi) × g", "t = g ÷ (Vf − Vi)"], "correct": 0, "id": 76}, {"topic": "Free Fall & Vertical Throw", "type": "despeje", "difficulty": "medium", "points": 20, "q": "For a ball thrown upward (up = positive), Vf = Vi − g·t. Which equation correctly solves for Vi?", "options": ["Vi = Vf + g·t", "Vi = Vf − g·t", "Vi = g·t − Vf", "Vi = Vf × g·t"], "correct": 0, "id": 77}, {"topic": "Free Fall & Vertical Throw", "type": "despeje", "difficulty": "medium", "points": 20, "q": "For a ball thrown upward (up = positive), Vf = Vi − g·t. Which equation correctly solves for t?", "options": ["t = (Vi − Vf) ÷ g", "t = (Vf − Vi) ÷ g", "t = (Vi − Vf) × g", "t = g ÷ (Vi − Vf)"], "correct": 0, "id": 78}, {"topic": "Free Fall & Vertical Throw", "type": "despeje", "difficulty": "hard", "points": 30, "q": "Given d = ½·g·t² (object dropped from rest), which equation correctly solves for t?", "options": ["t = √(2·d ÷ g)", "t = 2·d ÷ g", "t = √(2·d) ÷ g", "t = √(d ÷ (2·g))"], "correct": 0, "id": 79}, {"topic": "Free Fall & Vertical Throw", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Vf² = Vi² + 2·g·d, which equation correctly solves for Vi²?", "options": ["Vi² = Vf² − 2·g·d", "Vi² = Vf² + 2·g·d", "Vi² = 2·g·d − Vf²", "Vi² = Vf² × 2·g·d"], "correct": 0, "id": 80}, {"topic": "Free Fall & Vertical Throw", "type": "despeje", "difficulty": "medium", "points": 20, "q": "Given Vf² = Vi² + 2·g·d, which equation correctly solves for d?", "options": ["d = (Vf² − Vi²) ÷ (2·g)", "d = (Vi² − Vf²) ÷ (2·g)", "d = (Vf² − Vi²) × 2·g", "d = 2·g ÷ (Vf² − Vi²)"], "correct": 0, "id": 81}, {"topic": "Free Fall & Vertical Throw", "type": "despeje", "difficulty": "hard", "points": 30, "q": "Given h_max = Vi² / (2·g) (max height of a vertical throw), which equation correctly solves for Vi?", "options": ["Vi = √(2·g·h_max)", "Vi = 2·g·h_max", "Vi = √(2·g) · h_max", "Vi = h_max ÷ (2·g)"], "correct": 0, "id": 82}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 126 km/h to m/s.", "answer": 35.0, "tol": 1.4000000000000001, "unit": "m/s", "formula": "v[m/s] = v[km/h] × 1000 ÷ 3600", "despeje": "v[m/s] = v[km/h] × 1000 ÷ 3600", "sub": "126 × 1000 ÷ 3600", "id": 83}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 15 and points at 53° (Quadrant I). Find its y-component.", "answer": 11.979532650709393, "tol": 0.4791813060283757, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "15 × sin(53°)", "id": 84}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "Two towns are 420 km apart. A car travels at a constant 70 km/h. How long does the trip take (in hours)?", "answer": 6.0, "tol": 0.24, "unit": "h", "formula": "t = d/v", "despeje": "t = d/v", "sub": "420 ÷ 70", "id": 85}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object accelerates at 2 m/s² from rest. How far does it travel in 10 s?", "answer": 100.0, "tol": 4.0, "unit": "m", "formula": "d = ½·a·t² (Vi = 0)", "despeje": "d = ½·a·t² (Vi = 0)", "sub": "0.5 × 2 × 10²", "id": 86}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball is thrown straight up at 15 m/s. Find the time to reach maximum height.", "answer": 1.530612244897959, "tol": 0.061224489795918366, "unit": "s", "formula": "t_up = Vi / g", "despeje": "t_up = Vi / g", "sub": "15 ÷ 9.8", "id": 87}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 22 m/s to km/h.", "answer": 79.2, "tol": 3.168, "unit": "km/h", "formula": "v[km/h] = v[m/s] × 3.6", "despeje": "v[km/h] = v[m/s] × 3.6", "sub": "22 × 3.6", "id": 88}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 12 and points at 37° (Quadrant I). Find its x-component.", "answer": 9.583626120567514, "tol": 0.38334504482270054, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "12 × cos(37°)", "id": 89}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "At a constant 25 m/s, how far does an object travel in 8 s?", "answer": 200, "tol": 8.0, "unit": "m", "formula": "d = v × t", "despeje": "d = v × t", "sub": "25 × 8", "id": 90}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball starts from rest and accelerates at 2.5 m/s² for 10 s. Find its final velocity.", "answer": 25.0, "tol": 1.0, "unit": "m/s", "formula": "Vf = Vi + a·t", "despeje": "Vf = Vi + a·t", "sub": "0 + 2.5 × 10", "id": 91}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "A stone is dropped from a cliff and falls for 2 s. Find the distance it falls.", "answer": 19.6, "tol": 0.784, "unit": "m", "formula": "d = ½·g·t² (Vi = 0)", "despeje": "d = ½·g·t² (Vi = 0)", "sub": "0.5 × 9.8 × 2²", "id": 92}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 25 m/s to km/h.", "answer": 90.0, "tol": 3.6, "unit": "km/h", "formula": "v[km/h] = v[m/s] × 3.6", "despeje": "v[km/h] = v[m/s] × 3.6", "sub": "25 × 3.6", "id": 93}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 20 and points at 25° (Quadrant I). Find its x-component.", "answer": 18.126155740732997, "tol": 0.7250462296293199, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "20 × cos(25°)", "id": 94}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "A cyclist travels 200 m in 40 s at constant velocity. Find the speed.", "answer": 5.0, "tol": 0.2, "unit": "m/s", "formula": "v = d/t", "despeje": "v = d/t", "sub": "200 ÷ 40", "id": 95}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball starts from rest and accelerates at 5 m/s² for 4 s. Find its final velocity.", "answer": 20, "tol": 0.8, "unit": "m/s", "formula": "Vf = Vi + a·t", "despeje": "Vf = Vi + a·t", "sub": "0 + 5 × 4", "id": 96}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball is thrown straight up at 22 m/s. Find the time to reach maximum height.", "answer": 2.2448979591836733, "tol": 0.08979591836734693, "unit": "s", "formula": "t_up = Vi / g", "despeje": "t_up = Vi / g", "sub": "22 ÷ 9.8", "id": 97}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 0.5 hours to seconds.", "answer": 1800.0, "tol": 72.0, "unit": "s", "formula": "t[s] = t[h] × 3600", "despeje": "t[s] = t[h] × 3600", "sub": "0.5 × 3600", "id": 98}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 12 and points at 37° (Quadrant I). Find its y-component.", "answer": 7.221780277824579, "tol": 0.2888712111129832, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "12 × sin(37°)", "id": 99}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "At a constant 30 m/s, how far does an object travel in 6 s?", "answer": 180, "tol": 7.2, "unit": "m", "formula": "d = v × t", "despeje": "d = v × t", "sub": "30 × 6", "id": 100}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object accelerates at 3 m/s² from rest. How far does it travel in 6 s?", "answer": 54.0, "tol": 2.16, "unit": "m", "formula": "d = ½·a·t² (Vi = 0)", "despeje": "d = ½·a·t² (Vi = 0)", "sub": "0.5 × 3 × 6²", "id": 101}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object is dropped from rest. Find its speed after 5 s of free fall (g = 9.8 m/s²).", "answer": 49.0, "tol": 1.96, "unit": "m/s", "formula": "Vf = g·t (Vi = 0)", "despeje": "Vf = g·t (Vi = 0)", "sub": "9.8 × 5", "id": 102}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 63 km/h to m/s.", "answer": 17.5, "tol": 0.7000000000000001, "unit": "m/s", "formula": "v[m/s] = v[km/h] × 1000 ÷ 3600", "despeje": "v[m/s] = v[km/h] × 1000 ÷ 3600", "sub": "63 × 1000 ÷ 3600", "id": 103}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 8 and points at 60° (Quadrant I). Find its y-component.", "answer": 6.928203230275509, "tol": 0.27712812921102037, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "8 × sin(60°)", "id": 104}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "Two towns are 240 km apart. A car travels at a constant 80 km/h. How long does the trip take (in hours)?", "answer": 3.0, "tol": 0.12, "unit": "h", "formula": "t = d/v", "despeje": "t = d/v", "sub": "240 ÷ 80", "id": 105}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object speeds up from 20 m/s to 50 m/s in 10 s. Find the acceleration.", "answer": 3.0, "tol": 0.12, "unit": "m/s²", "formula": "a = (Vf − Vi) / t", "despeje": "a = (Vf − Vi) / t", "sub": "(50 - 20) ÷ 10", "id": 106}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object is dropped from rest. Find its speed after 4 s of free fall (g = 9.8 m/s²).", "answer": 39.2, "tol": 1.568, "unit": "m/s", "formula": "Vf = g·t (Vi = 0)", "despeje": "Vf = g·t (Vi = 0)", "sub": "9.8 × 4", "id": 107}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 45 km/h to m/s.", "answer": 12.5, "tol": 0.5, "unit": "m/s", "formula": "v[m/s] = v[km/h] × 1000 ÷ 3600", "despeje": "v[m/s] = v[km/h] × 1000 ÷ 3600", "sub": "45 × 1000 ÷ 3600", "id": 108}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 18 and points at 40° (Quadrant I). Find its y-component.", "answer": 11.570176974357707, "tol": 0.4628070789743083, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "18 × sin(40°)", "id": 109}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "At a constant 18 m/s, how far does an object travel in 15 s?", "answer": 270, "tol": 10.8, "unit": "m", "formula": "d = v × t", "despeje": "d = v × t", "sub": "18 × 15", "id": 110}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object accelerates at 5 m/s² from rest. How far does it travel in 4 s?", "answer": 40.0, "tol": 1.6, "unit": "m", "formula": "d = ½·a·t² (Vi = 0)", "despeje": "d = ½·a·t² (Vi = 0)", "sub": "0.5 × 5 × 4²", "id": 111}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball is thrown straight up at 30 m/s. Find the time to reach maximum height.", "answer": 3.061224489795918, "tol": 0.12244897959183673, "unit": "s", "formula": "t_up = Vi / g", "despeje": "t_up = Vi / g", "sub": "30 ÷ 9.8", "id": 112}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 10 m/s to km/h.", "answer": 36.0, "tol": 1.44, "unit": "km/h", "formula": "v[km/h] = v[m/s] × 3.6", "despeje": "v[km/h] = v[m/s] × 3.6", "sub": "10 × 3.6", "id": 113}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 8 and points at 60° (Quadrant I). Find its x-component.", "answer": 4.000000000000001, "tol": 0.16000000000000003, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "8 × cos(60°)", "id": 114}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object travels 500 m at a constant 25 m/s. Find the time taken.", "answer": 20.0, "tol": 0.8, "unit": "s", "formula": "t = d/v", "despeje": "t = d/v", "sub": "500 ÷ 25", "id": 115}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object speeds up from 15 m/s to 45 m/s in 6 s. Find the acceleration.", "answer": 5.0, "tol": 0.2, "unit": "m/s²", "formula": "a = (Vf − Vi) / t", "despeje": "a = (Vf − Vi) / t", "sub": "(45 - 15) ÷ 6", "id": 116}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball is thrown straight up at 25 m/s. Find the time to reach maximum height.", "answer": 2.5510204081632653, "tol": 0.10204081632653061, "unit": "s", "formula": "t_up = Vi / g", "despeje": "t_up = Vi / g", "sub": "25 ÷ 9.8", "id": 117}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 0.5 km to centimeters.", "answer": 50000.0, "tol": 2000.0, "unit": "cm", "formula": "L[cm] = L[km] × 1000 × 100", "despeje": "L[cm] = L[km] × 1000 × 100", "sub": "0.5 × 100000", "id": 118}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 15 and points at 53° (Quadrant I). Find its x-component.", "answer": 9.027225347280726, "tol": 0.36108901389122905, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "15 × cos(53°)", "id": 119}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "Two towns are 100 km apart. A car travels at a constant 40 km/h. How long does the trip take (in hours)?", "answer": 2.5, "tol": 0.1, "unit": "h", "formula": "t = d/v", "despeje": "t = d/v", "sub": "100 ÷ 40", "id": 120}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object accelerates at 4 m/s² from rest. How far does it travel in 5 s?", "answer": 50.0, "tol": 2.0, "unit": "m", "formula": "d = ½·a·t² (Vi = 0)", "despeje": "d = ½·a·t² (Vi = 0)", "sub": "0.5 × 4 × 5²", "id": 121}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object is dropped from rest. Find its speed after 2.5 s of free fall (g = 9.8 m/s²).", "answer": 24.5, "tol": 0.98, "unit": "m/s", "formula": "Vf = g·t (Vi = 0)", "despeje": "Vf = g·t (Vi = 0)", "sub": "9.8 × 2.5", "id": 122}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 8 minutes to seconds.", "answer": 480, "tol": 19.2, "unit": "s", "formula": "t[s] = t[min] × 60", "despeje": "t[s] = t[min] × 60", "sub": "8 × 60", "id": 123}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 18 and points at 40° (Quadrant I). Find its x-component.", "answer": 13.788799976141604, "tol": 0.5515519990456642, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "18 × cos(40°)", "id": 124}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "Two towns are 150 km apart. A car travels at a constant 60 km/h. How long does the trip take (in hours)?", "answer": 2.5, "tol": 0.1, "unit": "h", "formula": "t = d/v", "despeje": "t = d/v", "sub": "150 ÷ 60", "id": 125}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball starts from rest and accelerates at 3 m/s² for 6 s. Find its final velocity.", "answer": 18, "tol": 0.72, "unit": "m/s", "formula": "Vf = Vi + a·t", "despeje": "Vf = Vi + a·t", "sub": "0 + 3 × 6", "id": 126}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "A stone is dropped from a cliff and falls for 3 s. Find the distance it falls.", "answer": 44.1, "tol": 1.764, "unit": "m", "formula": "d = ½·g·t² (Vi = 0)", "despeje": "d = ½·g·t² (Vi = 0)", "sub": "0.5 × 9.8 × 3²", "id": 127}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 3 km to centimeters.", "answer": 300000, "tol": 12000.0, "unit": "cm", "formula": "L[cm] = L[km] × 1000 × 100", "despeje": "L[cm] = L[km] × 1000 × 100", "sub": "3 × 100000", "id": 128}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 10 and points at 30° (Quadrant I). Find its x-component.", "answer": 8.660254037844387, "tol": 0.3464101615137755, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "10 × cos(30°)", "id": 129}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object travels 100 m at a constant 8 m/s. Find the time taken.", "answer": 12.5, "tol": 0.5, "unit": "s", "formula": "t = d/v", "despeje": "t = d/v", "sub": "100 ÷ 8", "id": 130}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball starts from rest and accelerates at 4 m/s² for 5 s. Find its final velocity.", "answer": 20, "tol": 0.8, "unit": "m/s", "formula": "Vf = Vi + a·t", "despeje": "Vf = Vi + a·t", "sub": "0 + 4 × 5", "id": 131}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball is thrown straight up at 35 m/s. Find the time to reach maximum height.", "answer": 3.571428571428571, "tol": 0.14285714285714285, "unit": "s", "formula": "t_up = Vi / g", "despeje": "t_up = Vi / g", "sub": "35 ÷ 9.8", "id": 132}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 108 km/h to m/s.", "answer": 30.0, "tol": 1.2, "unit": "m/s", "formula": "v[m/s] = v[km/h] × 1000 ÷ 3600", "despeje": "v[m/s] = v[km/h] × 1000 ÷ 3600", "sub": "108 × 1000 ÷ 3600", "id": 133}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 20 and points at 25° (Quadrant I). Find its y-component.", "answer": 8.452365234813989, "tol": 0.3380946093925596, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "20 × sin(25°)", "id": 134}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "A cyclist travels 150 m in 25 s at constant velocity. Find the speed.", "answer": 6.0, "tol": 0.24, "unit": "m/s", "formula": "v = d/t", "despeje": "v = d/t", "sub": "150 ÷ 25", "id": 135}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object speeds up from 0 m/s to 24 m/s in 6 s. Find the acceleration.", "answer": 4.0, "tol": 0.16, "unit": "m/s²", "formula": "a = (Vf − Vi) / t", "despeje": "a = (Vf − Vi) / t", "sub": "(24 - 0) ÷ 6", "id": 136}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object is dropped from rest. Find its speed after 6 s of free fall (g = 9.8 m/s²).", "answer": 58.800000000000004, "tol": 2.3520000000000003, "unit": "m/s", "formula": "Vf = g·t (Vi = 0)", "despeje": "Vf = g·t (Vi = 0)", "sub": "9.8 × 6", "id": 137}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 18 km/h to m/s.", "answer": 5.0, "tol": 0.2, "unit": "m/s", "formula": "v[m/s] = v[km/h] × 1000 ÷ 3600", "despeje": "v[m/s] = v[km/h] × 1000 ÷ 3600", "sub": "18 × 1000 ÷ 3600", "id": 138}, {"topic": "Vector Components", "type": "calc", "difficulty": "easy", "points": 10, "q": "A vector has magnitude 10 and points at 30° (Quadrant I). Find its y-component.", "answer": 4.999999999999999, "tol": 0.19999999999999996, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "10 × sin(30°)", "id": 139}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "At a constant 20 m/s, how far does an object travel in 12 s?", "answer": 240, "tol": 9.6, "unit": "m", "formula": "d = v × t", "despeje": "d = v × t", "sub": "20 × 12", "id": 140}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object speeds up from 5 m/s to 25 m/s in 4 s. Find the acceleration.", "answer": 5.0, "tol": 0.2, "unit": "m/s²", "formula": "a = (Vf − Vi) / t", "despeje": "a = (Vf − Vi) / t", "sub": "(25 - 5) ÷ 4", "id": 141}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object is dropped from rest. Find its speed after 1.5 s of free fall (g = 9.8 m/s²).", "answer": 14.700000000000001, "tol": 0.5880000000000001, "unit": "m/s", "formula": "Vf = g·t (Vi = 0)", "despeje": "Vf = g·t (Vi = 0)", "sub": "9.8 × 1.5", "id": 142}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 5 minutes to seconds.", "answer": 300, "tol": 12.0, "unit": "s", "formula": "t[s] = t[min] × 60", "despeje": "t[s] = t[min] × 60", "sub": "5 × 60", "id": 143}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object travels 750 m at a constant 50 m/s. Find the time taken.", "answer": 15.0, "tol": 0.6, "unit": "s", "formula": "t = d/v", "despeje": "t = d/v", "sub": "750 ÷ 50", "id": 144}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object accelerates at 2.5 m/s² from rest. How far does it travel in 6 s?", "answer": 45.0, "tol": 1.8, "unit": "m", "formula": "d = ½·a·t² (Vi = 0)", "despeje": "d = ½·a·t² (Vi = 0)", "sub": "0.5 × 2.5 × 6²", "id": 145}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object is dropped from rest. Find its speed after 2 s of free fall (g = 9.8 m/s²).", "answer": 19.6, "tol": 0.784, "unit": "m/s", "formula": "Vf = g·t (Vi = 0)", "despeje": "Vf = g·t (Vi = 0)", "sub": "9.8 × 2", "id": 146}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 15 minutes to seconds.", "answer": 900, "tol": 36.0, "unit": "s", "formula": "t[s] = t[min] × 60", "despeje": "t[s] = t[min] × 60", "sub": "15 × 60", "id": 147}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object travels 240 m at a constant 20 m/s. Find the time taken.", "answer": 12.0, "tol": 0.48, "unit": "s", "formula": "t = d/v", "despeje": "t = d/v", "sub": "240 ÷ 20", "id": 148}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "An object speeds up from 8 m/s to 32 m/s in 8 s. Find the acceleration.", "answer": 3.0, "tol": 0.12, "unit": "m/s²", "formula": "a = (Vf − Vi) / t", "despeje": "a = (Vf − Vi) / t", "sub": "(32 - 8) ÷ 8", "id": 149}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "A stone is dropped from a cliff and falls for 1.5 s. Find the distance it falls.", "answer": 11.025, "tol": 0.441, "unit": "m", "formula": "d = ½·g·t² (Vi = 0)", "despeje": "d = ½·g·t² (Vi = 0)", "sub": "0.5 × 9.8 × 1.5²", "id": 150}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "easy", "points": 10, "q": "Convert 15 m/s to km/h.", "answer": 54.0, "tol": 2.16, "unit": "km/h", "formula": "v[km/h] = v[m/s] × 3.6", "despeje": "v[km/h] = v[m/s] × 3.6", "sub": "15 × 3.6", "id": 151}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "easy", "points": 10, "q": "Two towns are 90 km apart. A car travels at a constant 45 km/h. How long does the trip take (in hours)?", "answer": 2.0, "tol": 0.08, "unit": "h", "formula": "t = d/v", "despeje": "t = d/v", "sub": "90 ÷ 45", "id": 152}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "easy", "points": 10, "q": "A ball starts from rest and accelerates at 6 m/s² for 3 s. Find its final velocity.", "answer": 18, "tol": 0.72, "unit": "m/s", "formula": "Vf = Vi + a·t", "despeje": "Vf = Vi + a·t", "sub": "0 + 6 × 3", "id": 153}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "easy", "points": 10, "q": "A stone is dropped from a cliff and falls for 4 s. Find the distance it falls.", "answer": 78.4, "tol": 3.136, "unit": "m", "formula": "d = ½·g·t² (Vi = 0)", "despeje": "d = ½·g·t² (Vi = 0)", "sub": "0.5 × 9.8 × 4²", "id": 154}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "medium", "points": 20, "q": "An object moves at 0.0025 m/s. Convert this to km/h.", "answer": 0.009000000000000001, "tol": 0.005, "unit": "km/h", "formula": "v[km/h] = v[m/s] × 3.6", "despeje": "v[km/h] = v[m/s] × 3.6", "sub": "0.0025 × 3.6", "id": 155}, {"topic": "Vector Components", "type": "calc", "difficulty": "medium", "points": 20, "q": "A vector has magnitude 20 and points at 330°. Find its y-component.", "answer": -10.000000000000009, "tol": 0.40000000000000036, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "20 × sin(330°)", "id": 156}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "medium", "points": 20, "q": "An object starts at 10 m/s and accelerates at 3 m/s² for 4 s. Find the distance traveled.", "answer": 64.0, "tol": 2.56, "unit": "m", "formula": "d = Vi·t + ½·a·t²", "despeje": "d = Vi·t + ½·a·t²", "sub": "10×4 + 0.5×3×4²", "id": 157}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "medium", "points": 20, "q": "An object is dropped from rest and falls 80 m. Find its speed at that point.", "answer": 39.59797974644666, "tol": 1.5839191898578664, "unit": "m/s", "formula": "Vf = √(2·g·d) (Vi = 0)", "despeje": "Vf = √(2·g·d) (Vi = 0)", "sub": "√(2 × 9.8 × 80)", "id": 158}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "medium", "points": 20, "q": "Convert 250000 cm to kilometers.", "answer": 2.5, "tol": 0.1, "unit": "km", "formula": "L[km] = L[cm] ÷ 100000", "despeje": "L[km] = L[cm] ÷ 100000", "sub": "250000 ÷ 100000", "id": 159}, {"topic": "Vector Components", "type": "calc", "difficulty": "medium", "points": 20, "q": "A vector has magnitude 16 and points at 280°. Find its y-component.", "answer": -15.75692404819533, "tol": 0.6302769619278132, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "16 × sin(280°)", "id": 160}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "medium", "points": 20, "q": "An object starts at 5 m/s and accelerates at 2 m/s² for 6 s. Find the distance traveled.", "answer": 66.0, "tol": 2.64, "unit": "m", "formula": "d = Vi·t + ½·a·t²", "despeje": "d = Vi·t + ½·a·t²", "sub": "5×6 + 0.5×2×6²", "id": 161}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "medium", "points": 20, "q": "A ball is thrown straight up at 35 m/s. Find the maximum height reached.", "answer": 62.49999999999999, "tol": 2.4999999999999996, "unit": "m", "formula": "h_max = Vi² / (2·g)", "despeje": "h_max = Vi² / (2·g)", "sub": "35² ÷ (2 × 9.8)", "id": 162}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "medium", "points": 20, "q": "A runner covers 900 m in 100 s. Find the speed in km/h.", "answer": 32.4, "tol": 1.296, "unit": "km/h", "formula": "v = d/t, then v[km/h] = v[m/s] × 3.6", "despeje": "v = d/t, then v[km/h] = v[m/s] × 3.6", "sub": "900 ÷ 100 = 9 m/s → × 3.6", "id": 163}, {"topic": "Vector Components", "type": "calc", "difficulty": "medium", "points": 20, "q": "A vector has magnitude 10 and points at 300°. Find its y-component.", "answer": -8.660254037844386, "tol": 0.3464101615137754, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "10 × sin(300°)", "id": 164}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "medium", "points": 20, "q": "An object's velocity goes from 15 m/s to 35 m/s with acceleration 2 m/s². Find the time taken.", "answer": 10.0, "tol": 0.4, "unit": "s", "formula": "t = (Vf − Vi) / a", "despeje": "t = (Vf − Vi) / a", "sub": "(35 - 15) ÷ 2", "id": 165}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "medium", "points": 20, "q": "A ball is thrown straight up at 22 m/s. Find the maximum height reached.", "answer": 24.693877551020407, "tol": 0.9877551020408163, "unit": "m", "formula": "h_max = Vi² / (2·g)", "despeje": "h_max = Vi² / (2·g)", "sub": "22² ÷ (2 × 9.8)", "id": 166}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "medium", "points": 20, "q": "A car travels at 50 mi/h. Convert to km/h (1 mi = 1.609 km).", "answer": 80.45, "tol": 3.218, "unit": "km/h", "formula": "v[km/h] = v[mi/h] × 1.609", "despeje": "v[km/h] = v[mi/h] × 1.609", "sub": "50 × 1.609", "id": 167}, {"topic": "Vector Components", "type": "calc", "difficulty": "medium", "points": 20, "q": "A vector has magnitude 16 and points at 135°. Find its x-component.", "answer": -11.31370849898476, "tol": 0.45254833995939037, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "16 × cos(135°)", "id": 168}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "medium", "points": 20, "q": "Starting from rest, an object accelerates at 2 m/s² over a distance of 100 m. Find the final velocity.", "answer": 20.0, "tol": 0.8, "unit": "m/s", "formula": "Vf = √(2·a·d) (Vi = 0)", "despeje": "Vf = √(2·a·d) (Vi = 0)", "sub": "√(2 × 2 × 100)", "id": 169}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "medium", "points": 20, "q": "An object is dropped from rest and falls 60 m. Find its speed at that point.", "answer": 34.292856398964496, "tol": 1.3717142559585798, "unit": "m/s", "formula": "Vf = √(2·g·d) (Vi = 0)", "despeje": "Vf = √(2·g·d) (Vi = 0)", "sub": "√(2 × 9.8 × 60)", "id": 170}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "medium", "points": 20, "q": "An object moves at 0.004 m/s. Convert this to km/h.", "answer": 0.014400000000000001, "tol": 0.005, "unit": "km/h", "formula": "v[km/h] = v[m/s] × 3.6", "despeje": "v[km/h] = v[m/s] × 3.6", "sub": "0.004 × 3.6", "id": 171}, {"topic": "Vector Components", "type": "calc", "difficulty": "medium", "points": 20, "q": "A vector has magnitude 10 and points at 120°. Find its x-component.", "answer": -4.999999999999998, "tol": 0.19999999999999993, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "10 × cos(120°)", "id": 172}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "medium", "points": 20, "q": "An object's velocity changes from 15 m/s to 0 m/s over a distance of 22.5 m. Find the acceleration.", "answer": -5.0, "tol": 0.2, "unit": "m/s²", "formula": "a = (Vf² − Vi²) / (2·d)", "despeje": "a = (Vf² − Vi²) / (2·d)", "sub": "(0² - 15²) ÷ (2×22.5)", "id": 173}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "medium", "points": 20, "q": "A ball is thrown straight up at 30 m/s. Find the maximum height reached.", "answer": 45.91836734693877, "tol": 1.8367346938775508, "unit": "m", "formula": "h_max = Vi² / (2·g)", "despeje": "h_max = Vi² / (2·g)", "sub": "30² ÷ (2 × 9.8)", "id": 174}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "medium", "points": 20, "q": "Convert 50000 cm to kilometers.", "answer": 0.5, "tol": 0.02, "unit": "km", "formula": "L[km] = L[cm] ÷ 100000", "despeje": "L[km] = L[cm] ÷ 100000", "sub": "50000 ÷ 100000", "id": 175}, {"topic": "Vector Components", "type": "calc", "difficulty": "medium", "points": 20, "q": "A vector has magnitude 8 and points at 310°. Find its y-component.", "answer": -6.128355544951825, "tol": 0.245134221798073, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "8 × sin(310°)", "id": 176}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "medium", "points": 20, "q": "An object's velocity goes from 0 m/s to 18 m/s with acceleration 3 m/s². Find the time taken.", "answer": 6.0, "tol": 0.24, "unit": "s", "formula": "t = (Vf − Vi) / a", "despeje": "t = (Vf − Vi) / a", "sub": "(18 - 0) ÷ 3", "id": 177}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "hard", "points": 30, "q": "A train moves at a constant 108 km/h. How many meters does it travel in 2 minutes?", "answer": 3600.0, "tol": 144.0, "unit": "m", "formula": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "despeje": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "sub": "(108 ÷ 3.6) × (2 × 60)", "id": 178}, {"topic": "Vector Components", "type": "calc", "difficulty": "hard", "points": 30, "q": "A vector has magnitude 12 and points at 225°. Find its x-component.", "answer": -8.485281374238571, "tol": 0.3394112549695429, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "12 × cos(225°)", "id": 179}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "hard", "points": 30, "q": "A car drives 100 km at 50 km/h, then 50 km at 25 km/h. Find the average speed for the whole trip.", "answer": 37.5, "tol": 1.5, "unit": "km/h", "formula": "v_avg = total distance / total time", "despeje": "v_avg = total distance / total time", "sub": "(100+50) ÷ (100/50 + 50/25)", "id": 180}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "hard", "points": 30, "q": "An object speeds up from 0 m/s to 20 m/s over 50 m. Find the time it took (hint: find the acceleration first).", "answer": 5.0, "tol": 0.2, "unit": "s", "formula": "Step 1: a = (Vf²−Vi²)/(2d). Step 2: t = (Vf−Vi)/a", "despeje": "Step 1: a = (Vf²−Vi²)/(2d). Step 2: t = (Vf−Vi)/a", "sub": "a = (20²-0²)÷(2×50) = 4 → t = (20-0)÷4", "id": 181}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "hard", "points": 30, "q": "A ball is thrown straight up at 20 m/s. Find its velocity (signed, up = positive) after 1 s.", "answer": 10.2, "tol": 0.408, "unit": "m/s", "formula": "Vf = Vi − g·t", "despeje": "Vf = Vi − g·t", "sub": "20 - 9.8 × 1", "id": 182}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "hard", "points": 30, "q": "A train moves at a constant 126 km/h. How many meters does it travel in 3 minutes?", "answer": 6300.0, "tol": 252.0, "unit": "m", "formula": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "despeje": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "sub": "(126 ÷ 3.6) × (3 × 60)", "id": 183}, {"topic": "Vector Components", "type": "calc", "difficulty": "hard", "points": 30, "q": "A vector has magnitude 16 and points at 240°. Find its y-component.", "answer": -13.856406460551014, "tol": 0.5542562584220406, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "16 × sin(240°)", "id": 184}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "hard", "points": 30, "q": "A car drives 90 km at 45 km/h, then 90 km at 90 km/h. Find the average speed for the whole trip.", "answer": 60.0, "tol": 2.4, "unit": "km/h", "formula": "v_avg = total distance / total time", "despeje": "v_avg = total distance / total time", "sub": "(90+90) ÷ (90/45 + 90/90)", "id": 185}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "hard", "points": 30, "q": "An object speeds up from 0 m/s to 24 m/s over 72 m. Find the time it took (hint: find the acceleration first).", "answer": 6.0, "tol": 0.24, "unit": "s", "formula": "Step 1: a = (Vf²−Vi²)/(2d). Step 2: t = (Vf−Vi)/a", "despeje": "Step 1: a = (Vf²−Vi²)/(2d). Step 2: t = (Vf−Vi)/a", "sub": "a = (24²-0²)÷(2×72) = 4 → t = (24-0)÷4", "id": 186}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "hard", "points": 30, "q": "A ball is thrown straight up at 35 m/s. Find its velocity (signed, up = positive) after 2.5 s.", "answer": 10.5, "tol": 0.42, "unit": "m/s", "formula": "Vf = Vi − g·t", "despeje": "Vf = Vi − g·t", "sub": "35 - 9.8 × 2.5", "id": 187}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "hard", "points": 30, "q": "A train moves at a constant 72 km/h. How many meters does it travel in 5 minutes?", "answer": 6000.0, "tol": 240.0, "unit": "m", "formula": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "despeje": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "sub": "(72 ÷ 3.6) × (5 × 60)", "id": 188}, {"topic": "Vector Components", "type": "calc", "difficulty": "hard", "points": 30, "q": "A vector has components Fx = 5 and Fy = 12. Find its magnitude.", "answer": 13.0, "tol": 0.52, "unit": "", "formula": "F = √(Fx² + Fy²)", "despeje": "F = √(Fx² + Fy²)", "sub": "√(5² + 12²)", "id": 189}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "hard", "points": 30, "q": "A car drives 120 km at 40 km/h, then 80 km at 80 km/h. Find the average speed for the whole trip.", "answer": 50.0, "tol": 2.0, "unit": "km/h", "formula": "v_avg = total distance / total time", "despeje": "v_avg = total distance / total time", "sub": "(120+80) ÷ (120/40 + 80/80)", "id": 190}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "hard", "points": 30, "q": "An object speeds up from 5 m/s to 25 m/s over 60 m. Find the time it took (hint: find the acceleration first).", "answer": 4.0, "tol": 0.16, "unit": "s", "formula": "Step 1: a = (Vf²−Vi²)/(2d). Step 2: t = (Vf−Vi)/a", "despeje": "Step 1: a = (Vf²−Vi²)/(2d). Step 2: t = (Vf−Vi)/a", "sub": "a = (25²-5²)÷(2×60) = 5 → t = (25-5)÷5", "id": 191}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "hard", "points": 30, "q": "An object is dropped from rest and falls 19.6 m. Find how long it took (hint: solve d = ½·g·t² for t).", "answer": 2.0, "tol": 0.08, "unit": "s", "formula": "t = √(2·d / g)", "despeje": "t = √(2·d / g)", "sub": "√(2 × 19.6 ÷ 9.8)", "id": 192}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "hard", "points": 30, "q": "A train moves at a constant 54 km/h. How many meters does it travel in 8 minutes?", "answer": 7200.0, "tol": 288.0, "unit": "m", "formula": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "despeje": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "sub": "(54 ÷ 3.6) × (8 × 60)", "id": 193}, {"topic": "Vector Components", "type": "calc", "difficulty": "hard", "points": 30, "q": "A vector has magnitude 10 and points at 210°. Find its y-component.", "answer": -5.000000000000001, "tol": 0.20000000000000004, "unit": "", "formula": "Fy = F sinθ", "despeje": "Fy = F sinθ", "sub": "10 × sin(210°)", "id": 194}, {"topic": "Velocity (Uniform Motion)", "type": "calc", "difficulty": "hard", "points": 30, "q": "A car drives 60 km at 30 km/h, then 60 km at 60 km/h. Find the average speed for the whole trip.", "answer": 40.0, "tol": 1.6, "unit": "km/h", "formula": "v_avg = total distance / total time", "despeje": "v_avg = total distance / total time", "sub": "(60+60) ÷ (60/30 + 60/60)", "id": 195}, {"topic": "Acceleration (UAM)", "type": "calc", "difficulty": "hard", "points": 30, "q": "An object speeds up from 10 m/s to 30 m/s over 80 m. Find the time it took (hint: find the acceleration first).", "answer": 4.0, "tol": 0.16, "unit": "s", "formula": "Step 1: a = (Vf²−Vi²)/(2d). Step 2: t = (Vf−Vi)/a", "despeje": "Step 1: a = (Vf²−Vi²)/(2d). Step 2: t = (Vf−Vi)/a", "sub": "a = (30²-10²)÷(2×80) = 5 → t = (30-10)÷5", "id": 196}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "hard", "points": 30, "q": "An object is dropped from rest and falls 60 m. Find how long it took (hint: solve d = ½·g·t² for t).", "answer": 3.499271061118826, "tol": 0.13997084244475302, "unit": "s", "formula": "t = √(2·d / g)", "despeje": "t = √(2·d / g)", "sub": "√(2 × 60 ÷ 9.8)", "id": 197}, {"topic": "Unit Conversions", "type": "calc", "difficulty": "hard", "points": 30, "q": "A train moves at a constant 90 km/h. How many meters does it travel in 10 minutes?", "answer": 15000.0, "tol": 600.0, "unit": "m", "formula": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "despeje": "v[m/s] = v[km/h] ÷ 3.6, then d = v × t[s]", "sub": "(90 ÷ 3.6) × (10 × 60)", "id": 198}, {"topic": "Vector Components", "type": "calc", "difficulty": "hard", "points": 30, "q": "A vector has magnitude 16 and points at 240°. Find its x-component.", "answer": -8.000000000000007, "tol": 0.3200000000000003, "unit": "", "formula": "Fx = F cosθ", "despeje": "Fx = F cosθ", "sub": "16 × cos(240°)", "id": 199}, {"topic": "Free Fall & Vertical Throw", "type": "calc", "difficulty": "hard", "points": 30, "q": "An object is dropped from rest and falls 78.4 m. Find how long it took (hint: solve d = ½·g·t² for t).", "answer": 4.0, "tol": 0.16, "unit": "s", "formula": "t = √(2·d / g)", "despeje": "t = √(2·d / g)", "sub": "√(2 × 78.4 ÷ 9.8)", "id": 200}];
+var VOCAB_DATA = {"vocab": [{"word": "VELOCITY", "topic": "Velocity (Uniform Motion)", "clue": "Displacement over time — unlike speed, this is a vector (has direction)."}, {"word": "ACCELERATION", "topic": "Acceleration (UAM)", "clue": "The rate at which velocity changes over time."}, {"word": "DISPLACEMENT", "topic": "Velocity (Uniform Motion)", "clue": "A straight-line vector from the starting position to the final position."}, {"word": "MAGNITUDE", "topic": "Vector Components", "clue": "The size (length) of a vector, ignoring its direction."}, {"word": "VECTOR", "topic": "Vector Components", "clue": "A quantity that has both magnitude and direction."}, {"word": "SCALAR", "topic": "Vector Components", "clue": "A quantity described by a number and a unit only — no direction."}, {"word": "COMPONENT", "topic": "Vector Components", "clue": "The x-part or y-part you get when you break a vector apart."}, {"word": "RESULTANT", "topic": "Vector Components", "clue": "The single vector produced by adding two or more vectors together."}, {"word": "KINEMATICS", "topic": "Acceleration (UAM)", "clue": "The branch of physics that describes motion without studying its causes."}, {"word": "GRAVITY", "topic": "Free Fall & Vertical Throw", "clue": "The force that gives every free-falling object an acceleration of about 9.8 m/s²."}, {"word": "FREEFALL", "topic": "Free Fall & Vertical Throw", "clue": "Motion under gravity alone, with no air resistance (two words, written as one here)."}, {"word": "UNIFORM", "topic": "Velocity (Uniform Motion)", "clue": "Describes motion at constant velocity, where acceleration is zero."}, {"word": "DECELERATION", "topic": "Acceleration (UAM)", "clue": "Everyday word for a negative acceleration that slows an object down."}, {"word": "TRAJECTORY", "topic": "Free Fall & Vertical Throw", "clue": "The path a moving object follows through space."}, {"word": "CONVERSION", "topic": "Unit Conversions", "clue": "Changing a measurement from one unit to another without changing its value."}, {"word": "SUBSTITUTION", "topic": "Unit Conversions", "clue": "Replacing a formula's variables with known numeric values to solve it."}, {"word": "HYPOTENUSE", "topic": "Vector Components", "clue": "The longest side of a right triangle — used with the Pythagorean theorem to find a vector's magnitude."}, {"word": "INTERVAL", "topic": "Velocity (Uniform Motion)", "clue": "A difference between two times, written Δt."}, {"word": "SLOPE", "topic": "Velocity (Uniform Motion)", "clue": "On a position-vs-time graph, this equals the object's velocity."}, {"word": "NEWTON", "topic": "Acceleration (UAM)", "clue": "The scientist whose second law connects force, mass, and acceleration."}], "wordsearch": {"size": 15, "grid": ["ASDECELERATIONR", "SNCTDFREEFALLGO", "ZUOINMAGNITUDET", "THBITECZNZLNBIC", "RYVSTAMUAORWGOE", "AQHNTAMENRTXCTV", "JTTYOIRECIAWKUY", "EYNNPITENAFLEWT", "CSTEAOSULILOANN", "TCLINTTRTEKPRCA", "OCBOCOLEEICDSMS", "RSWKPOPUNVOCWIJ", "YIJMCELMSUNNALD", "YTIVARGEOESODLP", "LAVRETNIVCRECLX"], "placements": [{"word": "ACCELERATION", "cells": [[12, 12], [11, 11], [10, 10], [9, 9], [8, 8], [7, 7], [6, 6], [5, 5], [4, 4], [3, 3], [2, 2], [1, 1]]}, {"word": "DISPLACEMENT", "cells": [[12, 14], [11, 13], [10, 12], [9, 11], [8, 10], [7, 9], [6, 8], [5, 7], [4, 6], [3, 5], [2, 4], [1, 3]]}, {"word": "DECELERATION", "cells": [[0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], [0, 8], [0, 9], [0, 10], [0, 11], [0, 12], [0, 13]]}, {"word": "SUBSTITUTION", "cells": [[1, 0], [2, 1], [3, 2], [4, 3], [5, 4], [6, 5], [7, 6], [8, 7], [9, 8], [10, 9], [11, 10], [12, 11]]}, {"word": "KINEMATICS", "cells": [[9, 10], [8, 9], [7, 8], [6, 7], [5, 6], [4, 5], [3, 4], [2, 3], [1, 2], [0, 1]]}, {"word": "TRAJECTORY", "cells": [[3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [8, 0], [9, 0], [10, 0], [11, 0], [12, 0]]}, {"word": "CONVERSION", "cells": [[14, 12], [13, 11], [12, 10], [11, 9], [10, 8], [9, 7], [8, 6], [7, 5], [6, 4], [5, 3]]}, {"word": "HYPOTENUSE", "cells": [[5, 2], [6, 3], [7, 4], [8, 5], [9, 6], [10, 7], [11, 8], [12, 9], [13, 10], [14, 11]]}, {"word": "MAGNITUDE", "cells": [[2, 5], [2, 6], [2, 7], [2, 8], [2, 9], [2, 10], [2, 11], [2, 12], [2, 13]]}, {"word": "COMPONENT", "cells": [[14, 9], [13, 8], [12, 7], [11, 6], [10, 5], [9, 4], [8, 3], [7, 2], [6, 1]]}, {"word": "RESULTANT", "cells": [[14, 10], [13, 9], [12, 8], [11, 7], [10, 6], [9, 5], [8, 4], [7, 3], [6, 2]]}, {"word": "VELOCITY", "cells": [[14, 8], [13, 7], [12, 6], [11, 5], [10, 4], [9, 3], [8, 2], [7, 1]]}, {"word": "FREEFALL", "cells": [[1, 5], [1, 6], [1, 7], [1, 8], [1, 9], [1, 10], [1, 11], [1, 12]]}, {"word": "INTERVAL", "cells": [[14, 7], [14, 6], [14, 5], [14, 4], [14, 3], [14, 2], [14, 1], [14, 0]]}, {"word": "GRAVITY", "cells": [[13, 6], [13, 5], [13, 4], [13, 3], [13, 2], [13, 1], [13, 0]]}, {"word": "UNIFORM", "cells": [[4, 7], [5, 8], [6, 9], [7, 10], [8, 11], [9, 12], [10, 13]]}, {"word": "VECTOR", "cells": [[5, 14], [4, 14], [3, 14], [2, 14], [1, 14], [0, 14]]}, {"word": "SCALAR", "cells": [[10, 14], [9, 13], [8, 12], [7, 11], [6, 10], [5, 9]]}, {"word": "NEWTON", "cells": [[8, 13], [7, 12], [6, 11], [5, 10], [4, 9], [3, 8]]}, {"word": "SLOPE", "cells": [[8, 1], [9, 2], [10, 3], [11, 4], [12, 5]]}]}, "crossword": {"width": 12, "height": 11, "grid": [[null, "S", null, "N", null, "V", null, "M", null, null, null, "U"], ["A", "C", "C", "E", "L", "E", "R", "A", "T", "I", "O", "N"], [null, "A", null, "W", null, "C", null, "G", null, null, null, "I"], [null, "L", null, "T", null, "T", null, "N", null, "G", null, "F"], [null, "A", null, "O", null, "O", null, "I", null, "R", null, "O"], [null, "R", null, "N", null, "R", null, "T", null, "A", null, "R"], [null, null, "S", null, null, null, null, "U", null, "V", null, "M"], [null, null, "L", null, null, null, null, "D", null, "I", null, null], [null, "C", "O", "M", "P", "O", "N", "E", "N", "T", null, null], [null, null, "P", null, null, null, null, null, null, "Y", null, null], [null, "V", "E", "L", "O", "C", "I", "T", "Y", null, null, null]], "entries": [{"number": 1, "dir": "down", "word": "SCALAR", "row": 0, "col": 1, "clue": "A quantity described by a number and a unit only — no direction."}, {"number": 2, "dir": "down", "word": "NEWTON", "row": 0, "col": 3, "clue": "The scientist whose second law connects force, mass, and acceleration."}, {"number": 3, "dir": "down", "word": "VECTOR", "row": 0, "col": 5, "clue": "A quantity that has both magnitude and direction."}, {"number": 4, "dir": "down", "word": "MAGNITUDE", "row": 0, "col": 7, "clue": "The size (length) of a vector, ignoring its direction."}, {"number": 5, "dir": "down", "word": "UNIFORM", "row": 0, "col": 11, "clue": "Describes motion at constant velocity, where acceleration is zero."}, {"number": 6, "dir": "across", "word": "ACCELERATION", "row": 1, "col": 0, "clue": "The rate at which velocity changes over time."}, {"number": 7, "dir": "down", "word": "GRAVITY", "row": 3, "col": 9, "clue": "The force that gives every free-falling object an acceleration of about 9.8 m/s²."}, {"number": 8, "dir": "down", "word": "SLOPE", "row": 6, "col": 2, "clue": "On a position-vs-time graph, this equals the object's velocity."}, {"number": 9, "dir": "across", "word": "COMPONENT", "row": 8, "col": 1, "clue": "The x-part or y-part you get when you break a vector apart."}, {"number": 10, "dir": "across", "word": "VELOCITY", "row": 10, "col": 1, "clue": "Displacement over time — unlike speed, this is a vector (has direction)."}]}, "miniWordSearches": [{"size": 8, "grid": ["IDFIQFJV", "NUAWCRQE", "TSPPDEWL", "ECRBHEHO", "RAOHRFOC", "VLIMJAUI", "AACQGLRT", "LRDHOLGY"], "placements": [{"word": "INTERVAL", "cells": [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0]]}, {"word": "VELOCITY", "cells": [[0, 7], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7]]}, {"word": "FREEFALL", "cells": [[0, 5], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [7, 5]]}, {"word": "SCALAR", "cells": [[2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1]]}]}, {"size": 8, "grid": ["NOTWENFQ", "LNFKYADY", "RALACSNH", "XZGVOICP", "WXROTCEV", "BETCYUPF", "VYBSNBRS", "MUNIFORM"], "placements": [{"word": "UNIFORM", "cells": [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6], [7, 7]]}, {"word": "SCALAR", "cells": [[2, 5], [2, 4], [2, 3], [2, 2], [2, 1], [2, 0]]}, {"word": "VECTOR", "cells": [[4, 7], [4, 6], [4, 5], [4, 4], [4, 3], [4, 2]]}, {"word": "NEWTON", "cells": [[0, 5], [0, 4], [0, 3], [0, 2], [0, 1], [0, 0]]}]}, {"size": 8, "grid": ["WBUICYVY", "VELOCITY", "GRAVITYI", "UIKUOYUW", "RROTCEVC", "QCWMOHMR", "VYKUMTLA", "FREEFALL"], "placements": [{"word": "VELOCITY", "cells": [[1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [1, 7]]}, {"word": "FREEFALL", "cells": [[7, 0], [7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6], [7, 7]]}, {"word": "GRAVITY", "cells": [[2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [2, 6]]}, {"word": "VECTOR", "cells": [[4, 6], [4, 5], [4, 4], [4, 3], [4, 2], [4, 1]]}]}, {"size": 8, "grid": ["LSCALARY", "GLVEEWTU", "AOAEPIJN", "AHUFCJZG", "SHOOETAL", "WLLVTEOT", "GERGBVRR", "VKIDAXBF"], "placements": [{"word": "VELOCITY", "cells": [[7, 0], [6, 1], [5, 2], [4, 3], [3, 4], [2, 5], [1, 6], [0, 7]]}, {"word": "FREEFALL", "cells": [[7, 7], [6, 6], [5, 5], [4, 4], [3, 3], [2, 2], [1, 1], [0, 0]]}, {"word": "VECTOR", "cells": [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]]}, {"word": "SCALAR", "cells": [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6]]}]}, {"size": 8, "grid": ["SZZSUBZX", "YUDNJCHB", "MOYCZMVU", "GGEPOLSI", "FVHTYFAG", "UUNIFORM", "RRALACSZ", "LLAFEERF"], "placements": [{"word": "FREEFALL", "cells": [[7, 7], [7, 6], [7, 5], [7, 4], [7, 3], [7, 2], [7, 1], [7, 0]]}, {"word": "UNIFORM", "cells": [[5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [5, 7]]}, {"word": "SCALAR", "cells": [[6, 6], [6, 5], [6, 4], [6, 3], [6, 2], [6, 1]]}, {"word": "SLOPE", "cells": [[3, 6], [3, 5], [3, 4], [3, 3], [3, 2]]}]}, {"size": 8, "grid": ["NPXQVIJQ", "RMMUTNSU", "GDVDVTCN", "LKECKEAI", "UYCBURLF", "VJTCHVAO", "OEOSHARR", "NGRSBLRM"], "placements": [{"word": "INTERVAL", "cells": [[0, 5], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [7, 5]]}, {"word": "UNIFORM", "cells": [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7]]}, {"word": "VECTOR", "cells": [[2, 2], [3, 2], [4, 2], [5, 2], [6, 2], [7, 2]]}, {"word": "SCALAR", "cells": [[1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6]]}]}]};
+var VOCAB = VOCAB_DATA.vocab;
+var WS_DATA = VOCAB_DATA.wordsearch;
+var CW_DATA = VOCAB_DATA.crossword;
+var MINI_WS = VOCAB_DATA.miniWordSearches;
+var BONUS_INTERVAL = 6;
+var BONUS_POINTS = 15;
+// Google Apps Script Web App URL bound to the teacher's Google Sheet.
+// Empty = auto-send disabled (falls back to copy-to-clipboard only).
+// Claude Artifact links can never reach this (sandboxed, no outbound network),
+// so this only ever fires in a standalone copy of this file (e.g. hosted in
+// Schoology) — the copy-to-clipboard path always stays as a safety net.
+var SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyNJ69USTZI0l9UAF1AmX_TBF06nZ0TT-5eyIpsBx0G58-wAvpLMiMj-CDVPo7A8eYFWw/exec";
+// Build marker shown in small print on the start screen, so an old saved
+// copy of this file can be told apart from the latest one at a glance.
+var BUILD_ID = "2026-10-29";
+
+var TOPIC_COLOR = {
+  "Unit Conversions": "var(--t-conv)",
+  "Vector Components": "var(--t-vec)",
+  "Velocity (Uniform Motion)": "var(--t-vel)",
+  "Acceleration (UAM)": "var(--t-acc)",
+  "Free Fall & Vertical Throw": "var(--t-fall)"
+};
+var QTYPE_LABEL = {
+  theory: "Theory",
+  calc: "Calculate — identify the formula and solve",
+  despeje: "Rearrange the formula — pick the correct version"
+};
+var QUIZ_LEN = 15;
+var STREAK_BONUS = 5;
+var SPEED_BONUS = 5;
+var SPEED_WINDOW_MS = 15000;
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function shuffle(arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+function fmtNum(x){
+  var r = Math.round(x * 100) / 100;
+  return (Object.is(r, -0) ? 0 : r).toString();
+}
+function fmtDateTime(d){
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' +
+    pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function loadName(){
+  try{ return localStorage.getItem('pqc_name') || ''; }catch(e){ return ''; }
+}
+function saveName(name){
+  try{ localStorage.setItem('pqc_name', name); }catch(e){}
+}
+function loadStats(){
+  try{
+    var raw = localStorage.getItem('pqc_stats');
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {best: 0, attempts: 0, bestStreak: 0};
+}
+function saveStats(stats){
+  try{ localStorage.setItem('pqc_stats', JSON.stringify(stats)); }catch(e){}
+}
+
+var stats = loadStats();
+var round = null; // {questions:[], idx, score, maxScore, streak, bestStreak, log:[]}
+var studentName = loadName();
+
+function startRound(){
+  var picked = shuffle(QUESTION_BANK).slice(0, QUIZ_LEN);
+  var prepped = picked.map(function(q){
+    var item = Object.assign({}, q);
+    if (q.type === 'theory' || q.type === 'despeje') {
+      var order = shuffle([0,1,2,3]);
+      item.shuffledOptions = order.map(function(i){ return q.options[i]; });
+      item.shuffledCorrect = order.indexOf(q.correct);
+    }
+    return item;
+  });
+  round = {
+    questions: prepped,
+    idx: 0,
+    score: 0,
+    displayScore: 0,
+    maxScore: prepped.reduce(function(s,q){ return s + q.points; }, 0),
+    streak: 0,
+    bestStreak: 0,
+    log: [],
+    answeredCurrent: false,
+    qStart: Date.now(),
+    studentName: studentName,
+    startedAt: new Date(),
+    sinceBonus: 0,
+    bonus: null,
+    bonusScore: 0,
+    bonusCount: 0,
+    bonusAttempted: 0,
+    lastBonusKind: null,
+    usedMiniWsIdx: [],
+    usedCwEntries: [],
+    usedTermWords: []
+  };
+  screen = 'quiz';
+  render();
+}
+
+function currentQ(){ return round.questions[round.idx]; }
+
+function submitTheory(choiceIdx){
+  if (round.answeredCurrent) return;
+  var q = currentQ();
+  var isCorrect = choiceIdx === q.shuffledCorrect;
+  finishAnswer(q, isCorrect, q.shuffledOptions[choiceIdx]);
+}
+function submitCalc(){
+  if (round.answeredCurrent) return;
+  var q = currentQ();
+  var input = document.getElementById('calcInput');
+  var val = parseFloat(input.value);
+  var isCorrect = !isNaN(val) && Math.abs(val - q.answer) <= q.tol;
+  finishAnswer(q, isCorrect, isNaN(val) ? '(no answer)' : fmtNum(val));
+}
+function finishAnswer(q, isCorrect, given){
+  round.answeredCurrent = true;
+  var elapsed = Date.now() - round.qStart;
+  var streakBonus = 0, speedBonus = 0;
+  if (isCorrect) {
+    round.streak += 1;
+    round.bestStreak = Math.max(round.bestStreak, round.streak);
+    if (round.streak >= 3) streakBonus = STREAK_BONUS;
+    if (elapsed <= SPEED_WINDOW_MS) speedBonus = SPEED_BONUS;
+    round.score += q.points + streakBonus + speedBonus;
+  } else {
+    round.streak = 0;
+  }
+  round.log.push({ q: q, isCorrect: isCorrect, given: given, streakBonus: streakBonus, speedBonus: speedBonus, streakAt: round.streak });
+  render();
+  animateScore();
+}
+function animateScore(){
+  var el = document.querySelector('.score-badge');
+  if (!el) return;
+  var from = round.displayScore, to = round.score;
+  if (from === to) return;
+  var start = null, dur = 420;
+  function step(ts){
+    if (!start) start = ts;
+    var p = Math.min(1, (ts - start) / dur);
+    var val = Math.round(from + (to - from) * p);
+    el.textContent = val + ' pts';
+    if (p < 1) { requestAnimationFrame(step); }
+    else { round.displayScore = to; el.classList.remove('bump'); }
+  }
+  el.classList.add('bump');
+  requestAnimationFrame(step);
+}
+function advanceQuestion(){
+  if (round.idx < round.questions.length - 1) {
+    round.idx++;
+    round.answeredCurrent = false;
+    round.qStart = Date.now();
+    render();
+  } else {
+    finishRound();
+  }
+}
+function nextQuestion(){
+  round.sinceBonus = (round.sinceBonus || 0) + 1;
+  var isLast = round.idx >= round.questions.length - 1;
+  if (!isLast && round.sinceBonus >= BONUS_INTERVAL) {
+    round.sinceBonus = 0;
+    round.bonus = makeBonusRound();
+    render();
+    return;
+  }
+  advanceQuestion();
+}
+function bonusContinue(){
+  round.bonus = null;
+  advanceQuestion();
+}
+function finishRound(){
+  stats.attempts += 1;
+  var isBest = round.score > stats.best;
+  if (isBest) stats.best = round.score;
+  stats.bestStreak = Math.max(stats.bestStreak || 0, round.bestStreak);
+  saveStats(stats);
+  round.finishedAt = new Date();
+  renderEnd(isBest);
+}
+
+function diffBadge(q){
+  return '<span class="badge diff-' + q.difficulty + '">' + q.difficulty + '</span>' +
+         '<span class="badge pts">+' + q.points + ' pts</span>';
+}
+
+/* ================= bonus rounds (inline in the 30-question quiz) ================= */
+function pickUnused(poolLength, usedArr){
+  if (usedArr.length >= poolLength) usedArr.length = 0;
+  var idx;
+  do { idx = Math.floor(Math.random() * poolLength); } while (usedArr.indexOf(idx) !== -1);
+  usedArr.push(idx);
+  return idx;
+}
+function makeBonusRound(){
+  var kinds = ['ws', 'cw', 'term'].filter(function(k){ return k !== round.lastBonusKind; });
+  var kind = kinds[Math.floor(Math.random() * kinds.length)];
+  round.lastBonusKind = kind;
+  round.bonusAttempted++;
+  if (kind === 'ws') {
+    var wsIdx = pickUnused(MINI_WS.length, round.usedMiniWsIdx);
+    var data = MINI_WS[wsIdx];
+    return { kind: 'ws', data: data, found: {}, foundCells: {}, selecting: false, startCell: null, curCell: null, done: false };
+  }
+  if (kind === 'cw') {
+    var cwIdx = pickUnused(CW_DATA.entries.length, round.usedCwEntries);
+    var entry = CW_DATA.entries[cwIdx];
+    return { kind: 'cw', entry: entry, answers: entry.word.split('').map(function(){ return ''; }), checked: false, done: false };
+  }
+  var ttIdx = pickUnused(VOCAB.length, round.usedTermWords);
+  var item = VOCAB[ttIdx];
+  return { kind: 'term', item: item, answered: false, isCorrect: false, given: '' };
+}
+function bonusComplete(isCorrect){
+  round.bonus.done = true;
+  round.bonusCount++;
+  if (isCorrect) round.bonusScore += BONUS_POINTS;
+  round.score += isCorrect ? BONUS_POINTS : 0;
+  render();
+  if (isCorrect) animateScore();
+}
+function bwsCellKey(r, c){ return r + ',' + c; }
+function bwsCheckSelection(cells){
+  var b = round.bonus;
+  var forward = cells.map(function(rc){ return b.data.grid[rc[0]][rc[1]]; }).join('');
+  var backward = forward.split('').reverse().join('');
+  for (var i = 0; i < b.data.placements.length; i++) {
+    var p = b.data.placements[i];
+    if (b.found[p.word]) continue;
+    if (p.word === forward || p.word === backward) return p;
+  }
+  return null;
+}
+function bwsOnDown(r, c){
+  var b = round && round.bonus;
+  if (!b || b.done) return;
+  b.selecting = true;
+  b.startCell = [r, c];
+  b.curCell = [r, c];
+  render();
+}
+function bwsOnMove(r, c){
+  var b = round && round.bonus;
+  if (!b || !b.selecting) return;
+  if (b.curCell && b.curCell[0] === r && b.curCell[1] === c) return;
+  b.curCell = [r, c];
+  render();
+}
+function bwsOnUp(){
+  var b = round && round.bonus;
+  if (!b || !b.selecting) return;
+  b.selecting = false;
+  if (b.startCell && b.curCell) {
+    var line = wsLineCells(b.startCell[0], b.startCell[1], b.curCell[0], b.curCell[1]);
+    if (line) {
+      var match = bwsCheckSelection(line);
+      if (match) {
+        b.found[match.word] = true;
+        match.cells.forEach(function(rc){ b.foundCells[bwsCellKey(rc[0], rc[1])] = true; });
+      }
+    }
+  }
+  b.startCell = null;
+  b.curCell = null;
+  var allFound = b.data.placements.every(function(p){ return b.found[p.word]; });
+  if (allFound && !b.done) { bonusComplete(true); return; }
+  render();
+}
+window.addEventListener('pointerup', bwsOnUp);
+
+function bonusRoundHTML(){
+  var b = round.bonus;
+  var kindLabel = { ws: 'Mini word search', cw: 'Crossword clue', term: 'Type the term' }[b.kind];
+  var inner = '';
+  if (b.kind === 'ws') {
+    var wordsHtml = b.data.placements.map(function(p){
+      return '<span class="ws-chip' + (b.found[p.word] ? ' found' : '') + '">' + esc(p.word) + '</span>';
+    }).join('');
+    var gridHtml = b.data.grid.map(function(row, r){
+      return row.split('').map(function(ch, c){
+        var key = bwsCellKey(r, c);
+        var cls = '';
+        if (b.foundCells[key]) cls = ' found';
+        else if (b.selecting && b.curCell) {
+          var line = wsLineCells(b.startCell[0], b.startCell[1], b.curCell[0], b.curCell[1]);
+          if (line && line.some(function(rc){ return rc[0] === r && rc[1] === c; })) cls = ' selecting';
+        }
+        return '<div class="ws-cell' + cls + '" data-r="' + r + '" data-c="' + c + '">' + ch + '</div>';
+      }).join('');
+    }).join('');
+    inner = '<div class="ws-wordlist">' + wordsHtml + '</div>' +
+      '<div class="ws-grid-wrap" style="max-width:300px;"><div class="ws-grid" id="bwsGrid" style="grid-template-columns:repeat(' + b.data.size + ',1fr);">' + gridHtml + '</div></div>';
+  } else if (b.kind === 'cw') {
+    var boxes = b.entry.word.split('').map(function(correctCh, i){
+      var val = b.answers[i];
+      var cls = b.checked ? (val === correctCh ? ' correct' : ' wrong') : '';
+      return '<input maxlength="1" class="bcw-input' + cls + '" data-i="' + i + '" value="' + esc(val) + '">';
+    }).join('');
+    inner = '<p style="margin-bottom:10px;">' + esc(b.entry.clue) + '</p>' +
+      '<div class="bcw-row">' + boxes + '</div>' +
+      (b.checked && !b.done ? '<p style="margin-top:10px; color:var(--bad);">Not quite — try again.</p>' : '') +
+      (!b.done ? '<div style="margin-top:14px;"><button class="btn primary" id="bcwCheck">Check</button></div>' : '');
+  } else {
+    inner = '<div class="badge-row"><span class="badge" style="background:' + (TOPIC_COLOR[b.item.topic] || 'var(--accent)') + '; color:#fff;">' + esc(b.item.topic) + '</span></div>' +
+      '<p style="margin-bottom:10px;">' + esc(b.item.clue) + '</p>' +
+      (!b.answered ? '<div class="calc-row"><input type="text" id="bttInput" placeholder="your answer" autocomplete="off" autocapitalize="characters"><button class="btn primary" id="bttCheck">Check</button></div>'
+        : '<p style="color:' + (b.isCorrect ? 'var(--good)' : 'var(--bad)') + ';">' + (b.isCorrect ? '✓ Correct!' : ('✗ Correct answer: ' + esc(b.item.word))) + '</p>');
+  }
+  var doneLine = b.done
+    ? '<div class="celebrate" style="margin-top:14px;">⭐ +' + BONUS_POINTS + ' bonus pts!</div><button class="btn primary" id="bonusContinueBtn" style="margin-top:12px;">Continue the challenge →</button>'
+    : '<button class="back-link" id="bonusSkipBtn" style="margin-top:14px;">Skip this bonus →</button>';
+  return '<div class="topbar"><div class="progress-wrap"><div class="progress-track"><div class="progress-fill" style="width:' + Math.round((round.idx) / round.questions.length * 100) + '%"></div></div>' +
+      '<div class="progress-label"><span>Bonus round</span></div></div>' +
+      '<div class="score-badge mono">' + round.displayScore + ' pts</div></div>' +
+    '<div class="card q-card bonus-card">' +
+      '<div class="eyebrow">⭐ Bonus round — ' + kindLabel + '</div>' +
+      inner +
+      doneLine +
+    '</div>';
+}
+function wireBonusRound(){
+  var b = round.bonus;
+  if (b.kind === 'ws') {
+    var gridEl = document.getElementById('bwsGrid');
+    if (gridEl) {
+      gridEl.querySelectorAll('.ws-cell').forEach(function(cell){
+        cell.addEventListener('pointerdown', function(e){
+          e.preventDefault();
+          bwsOnDown(parseInt(cell.dataset.r, 10), parseInt(cell.dataset.c, 10));
+        });
+      });
+      gridEl.addEventListener('pointermove', function(e){
+        if (!b.selecting) return;
+        var el = document.elementFromPoint(e.clientX, e.clientY);
+        if (el && el.classList && el.classList.contains('ws-cell')) {
+          bwsOnMove(parseInt(el.dataset.r, 10), parseInt(el.dataset.c, 10));
+        }
+      });
+    }
+  } else if (b.kind === 'cw') {
+    var inputs = document.querySelectorAll('.bcw-input');
+    inputs.forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var i = parseInt(inp.dataset.i, 10);
+        var v = inp.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(-1);
+        b.answers[i] = v;
+        b.checked = false;
+        var focusIdx = v && i < b.entry.word.length - 1 ? i + 1 : i;
+        render();
+        var el = document.querySelector('.bcw-input[data-i="' + focusIdx + '"]');
+        if (el) { el.focus(); el.select(); }
+      });
+    });
+    var checkBtn = document.getElementById('bcwCheck');
+    if (checkBtn) checkBtn.onclick = function(){
+      b.checked = true;
+      var allCorrect = b.entry.word.split('').every(function(ch, i){ return b.answers[i] === ch; });
+      if (allCorrect) { bonusComplete(true); } else { render(); }
+    };
+  } else if (b.kind === 'term') {
+    if (!b.answered) {
+      var ttInput = document.getElementById('bttInput');
+      var ttBtn = document.getElementById('bttCheck');
+      function submit(){
+        var given = ttInput.value || '';
+        var isCorrect = normalizeTerm(given) === normalizeTerm(b.item.word);
+        b.answered = true;
+        b.isCorrect = isCorrect;
+        b.given = given;
+        bonusComplete(isCorrect);
+      }
+      ttBtn.onclick = submit;
+      ttInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
+      ttInput.focus();
+    }
+  }
+  var skipBtn = document.getElementById('bonusSkipBtn');
+  if (skipBtn) skipBtn.onclick = bonusContinue;
+  var contBtn = document.getElementById('bonusContinueBtn');
+  if (contBtn) contBtn.onclick = bonusContinue;
+}
+
+var screen = 'start'; // start | quiz | vocabHome | wordsearch | crossword | typeterm
+
+function render(){
+  var root = document.getElementById('app');
+  if (screen === 'start') { root.innerHTML = startHTML(); wireStart(); return; }
+  if (screen === 'quiz') { root.innerHTML = quizHTML(); wireQuiz(); return; }
+  if (screen === 'vocabHome') { root.innerHTML = vocabHomeHTML(); wireVocabHome(); return; }
+  if (screen === 'wordsearch') { root.innerHTML = wordSearchHTML(); wireWordSearch(); return; }
+  if (screen === 'crossword') { root.innerHTML = crosswordHTML(); wireCrossword(); return; }
+  if (screen === 'typeterm') { root.innerHTML = typeTermHTML(); wireTypeTerm(); return; }
+  if (screen === 'typetermEnd') {
+    root.innerHTML = typeTermEndHTML();
+    document.getElementById('ttAgain').onclick = startTypeTerm;
+    document.getElementById('ttHome').onclick = goVocabHome;
+    return;
+  }
+}
+function goHome(){ round = null; screen = 'start'; render(); }
+function goVocabHome(){ screen = 'vocabHome'; render(); }
+
+function startHTML(){
+  var statsRow = stats.attempts > 0
+    ? '<div class="stat-row"><div class="stat"><div class="num mono">' + stats.best + '</div><div class="lbl">Best score</div></div>' +
+      '<div class="stat"><div class="num mono">' + (stats.bestStreak||0) + '</div><div class="lbl">Best streak</div></div>' +
+      '<div class="stat"><div class="num mono">' + stats.attempts + '</div><div class="lbl">Rounds played</div></div></div>'
+    : '';
+  return '<div class="hero"><div class="eyebrow">Physics · 200-question bank</div>' +
+    '<h1>Physics Challenge</h1>' +
+    '<p>' + QUIZ_LEN + ' random questions each round — theory, calculation problems, and formula-rearranging exercises where you pick the correctly rearranged equation.</p></div>' +
+    '<div class="card">' +
+      '<div class="eyebrow" style="margin-bottom:6px;">How scoring works</div>' +
+      '<p>Harder questions are worth more.</p>' +
+      '<div class="scoring-grid">' +
+        '<div class="scoring-chip easy"><div class="lvl">Easy</div><div class="pts">10</div></div>' +
+        '<div class="scoring-chip medium"><div class="lvl">Medium</div><div class="pts">20</div></div>' +
+        '<div class="scoring-chip hard"><div class="lvl">Hard</div><div class="pts">30</div></div>' +
+      '</div>' +
+      '<div class="bonus-row">' +
+        '<div class="bonus-chip"><span class="ic">🔥</span><span>3+ correct in a row: <b>+5 pts</b> each while the streak lasts</span></div>' +
+        '<div class="bonus-chip"><span class="ic">⚡</span><span>Answer within ' + (SPEED_WINDOW_MS / 1000) + ' seconds: <b>+' + SPEED_BONUS + ' pts</b> speed bonus</span></div>' +
+        '<div class="bonus-chip"><span class="ic">⭐</span><span>Every few questions, a quick bonus round (mini word search, a crossword clue, or type-the-term) for <b>+15 pts</b> — skip it any time, no penalty</span></div>' +
+      '</div>' +
+      '<div class="qtype-legend">' +
+        '<span class="qtype-pill">Theory</span>' +
+        '<span class="qtype-pill">Calculate (type the number)</span>' +
+        '<span class="qtype-pill">Rearrange the formula</span>' +
+      '</div>' +
+      statsRow +
+      '<div class="name-field"><label for="nameInput" class="eyebrow">Your name (so your teacher can record your score)</label>' +
+        '<input type="text" id="nameInput" placeholder="e.g. Danny Araujo" maxlength="60" autocomplete="name" value="' + esc(studentName) + '"></div>' +
+      '<div class="name-error" id="nameError" hidden>Type your name first so your teacher knows whose score this is.</div>' +
+      '<button class="btn primary btn-block" id="startBtn" style="margin-top:6px;">Start Challenge</button>' +
+      '<button class="vocab-link" id="vocabLinkBtn">🧩 Word games — word search, crossword &amp; vocab practice</button>' +
+    '</div>' +
+    '<div style="text-align:center; margin-top:14px; font-family:\'IBM Plex Mono\',monospace; font-size:10.5px; color:var(--muted); letter-spacing:.03em;">' +
+      'Build ' + BUILD_ID + ' · ' + (SHEET_WEBAPP_URL ? '📡 Auto-send to Sheet: ON' : '📋 Auto-send to Sheet: OFF (copy to clipboard only)') +
+    '</div>';
+}
+function wireStart(){
+  document.getElementById('vocabLinkBtn').onclick = goVocabHome;
+  document.getElementById('startBtn').onclick = function(){
+    var input = document.getElementById('nameInput');
+    var name = (input.value || '').trim();
+    if (!name) {
+      document.getElementById('nameError').hidden = false;
+      input.focus();
+      return;
+    }
+    document.getElementById('nameError').hidden = true;
+    saveName(name);
+    studentName = name;
+    startRound();
+  };
+  document.getElementById('nameInput').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') document.getElementById('startBtn').click();
+  });
+}
+
+function quizHTML(){
+  if (round.bonus) return bonusRoundHTML();
+  var q = currentQ();
+  var pct = Math.round((round.idx) / round.questions.length * 100);
+  var topColor = TOPIC_COLOR[q.topic] || 'var(--accent)';
+  var isMC = (q.type === 'theory' || q.type === 'despeje');
+  var body;
+  if (isMC) {
+    var letters = ['A','B','C','D'];
+    body = '<div class="options">' + q.shuffledOptions.map(function(opt, i){
+      var cls = '';
+      if (round.answeredCurrent) {
+        if (i === q.shuffledCorrect) cls = ' correct';
+        else if (round.log[round.log.length-1].given === opt && i !== q.shuffledCorrect) cls = ' wrong';
+      }
+      return '<button class="opt-btn' + cls + '" data-i="' + i + '" ' + (round.answeredCurrent ? 'disabled' : '') + '>' +
+        '<span class="letter">' + letters[i] + '</span><span class="mono">' + esc(opt) + '</span></button>';
+    }).join('') + '</div>';
+  } else {
+    body = '<div class="calc-row">' +
+      '<input type="number" step="any" id="calcInput" placeholder="your answer" ' + (round.answeredCurrent ? 'disabled' : '') + '>' +
+      (q.unit ? '<span class="unit-label">' + esc(q.unit) + '</span>' : '') +
+      (round.answeredCurrent ? '' : '<button class="btn primary" id="checkBtn">Check</button>') +
+      '</div>';
+  }
+  var timerBar = round.answeredCurrent ? '' : '<div class="timer-track"><div class="timer-fill" id="timerFill" style="animation-duration:' + (SPEED_WINDOW_MS / 1000) + 's;"></div></div>';
+  var feedback = '';
+  if (round.answeredCurrent) {
+    var last = round.log[round.log.length - 1];
+    var cls = last.isCorrect ? 'ok' : 'no';
+    var verdict = last.isCorrect ? ('✓ Correct — +' + q.points + ' pts') : '✗ Not quite';
+    var bonusLine = '';
+    var bonusBits = [];
+    if (last.streakBonus) bonusBits.push('🔥 Streak ×' + last.streakAt + ' +' + last.streakBonus);
+    if (last.speedBonus) bonusBits.push('⚡ Quick answer +' + last.speedBonus);
+    if (bonusBits.length) bonusLine = '<div class="bonus-line">' + bonusBits.join(' · ') + '</div>';
+    var detail = '';
+    if (q.type === 'calc') {
+      detail = '<div class="detail"><b>Formula:</b> ' + esc(q.formula) + '<br>' +
+        '<b>Substitution:</b> ' + esc(q.sub) + '<br>' +
+        '<b>Answer:</b> ' + fmtNum(q.answer) + (q.unit ? (' ' + esc(q.unit)) : '') + '</div>';
+    } else if (!last.isCorrect) {
+      detail = '<div class="detail"><b>Correct answer:</b> ' + esc(q.shuffledOptions[q.shuffledCorrect]) + '</div>';
+    }
+    feedback = '<div class="feedback ' + cls + '">' + bonusLine + '<div class="verdict">' + verdict + '</div>' + detail + '</div>' +
+      '<div class="nav-row"><button class="btn primary" id="nextBtn">' +
+      (round.idx < round.questions.length - 1 ? 'Next question →' : 'See results →') + '</button></div>';
+  }
+  var streakTag = round.streak >= 2 ? '<span class="streak-tag">🔥 ' + round.streak + '</span>' : '';
+  return '<div class="topbar">' +
+      '<div class="progress-wrap"><div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="progress-label"><span>Question ' + (round.idx + 1) + ' of ' + round.questions.length + '</span>' + streakTag + '</div></div>' +
+      '<div class="score-badge mono">' + round.displayScore + ' pts</div>' +
+    '</div>' +
+    '<div class="card q-card">' +
+      '<div class="badge-row"><span class="badge" style="background:' + topColor + '; color:#fff;">' + esc(q.topic) + '</span>' + diffBadge(q) + '</div>' +
+      '<div class="q-type">' + QTYPE_LABEL[q.type] + '</div>' +
+      '<div class="q-text">' + esc(q.q) + '</div>' +
+      timerBar + body + feedback +
+    '</div>';
+}
+function wireQuiz(){
+  if (round.bonus) { wireBonusRound(); return; }
+  var q = currentQ();
+  if (!round.answeredCurrent) {
+    if (q.type === 'theory' || q.type === 'despeje') {
+      document.querySelectorAll('.opt-btn').forEach(function(btn){
+        btn.onclick = function(){ submitTheory(+btn.dataset.i); };
+      });
+    } else {
+      var input = document.getElementById('calcInput');
+      var btn = document.getElementById('checkBtn');
+      btn.onclick = submitCalc;
+      input.addEventListener('keydown', function(e){ if (e.key === 'Enter') submitCalc(); });
+      input.focus();
+    }
+  } else {
+    document.getElementById('nextBtn').onclick = nextQuestion;
+  }
+}
+
+function renderEnd(isBest){
+  var root = document.getElementById('app');
+  var pct = Math.round(round.score / round.maxScore * 100);
+  var byTopic = {};
+  round.log.forEach(function(entry){
+    var t = entry.q.topic;
+    byTopic[t] = byTopic[t] || { correct: 0, total: 0, pts: 0, maxPts: 0 };
+    byTopic[t].total++;
+    byTopic[t].maxPts += entry.q.points;
+    if (entry.isCorrect) { byTopic[t].correct++; byTopic[t].pts += entry.q.points; }
+  });
+  var topicRows = Object.keys(byTopic).sort().map(function(t){
+    var d = byTopic[t];
+    return '<tr><td><span class="topic-dot" style="background:' + (TOPIC_COLOR[t]||'var(--accent)') + '"></span>' + esc(t) + '</td>' +
+      '<td class="mono">' + d.correct + '/' + d.total + '</td><td class="mono">' + d.pts + '/' + d.maxPts + '</td></tr>';
+  }).join('');
+  var missed = round.log.filter(function(e){ return !e.isCorrect; });
+  var missedHtml = missed.length === 0
+    ? '<p style="margin-top:8px;">Perfect round — nothing missed.</p>'
+    : missed.map(function(entry){
+        var q = entry.q;
+        var correctText = (q.type === 'theory' || q.type === 'despeje') ? q.shuffledOptions[q.shuffledCorrect] : (fmtNum(q.answer) + (q.unit ? (' ' + q.unit) : ''));
+        var extra = q.type === 'calc' ? ('<div class="meta">Formula: ' + esc(q.formula) + ' — Substitution: ' + esc(q.sub) + '</div>') : '';
+        return '<div class="review-item"><div class="q">' + esc(q.q) + '</div>' +
+          '<div class="meta">' + esc(q.topic) + ' · ' + q.difficulty + ' · your answer: ' + esc(String(entry.given)) + ' · correct: ' + esc(correctText) + '</div>' + extra + '</div>';
+      }).join('');
+  var celebrate = '';
+  if (round.bestStreak >= 10) celebrate = '<div class="celebrate">🔥 ' + round.bestStreak + '-question streak — on fire!</div>';
+  else if (missed.length === 0) celebrate = '<div class="celebrate">✨ Perfect round, nothing missed.</div>';
+  else if (round.score > round.maxScore) celebrate = '<div class="celebrate">🚀 Bonus points pushed you past the base max!</div>';
+  var correctCount = round.log.filter(function(e){ return e.isCorrect; }).length;
+  var whenStr = fmtDateTime(round.finishedAt || new Date());
+  var resultRowValue = [
+    round.studentName || '(no name)',
+    whenStr,
+    round.score,
+    round.maxScore,
+    pct + '%',
+    correctCount + '/' + round.questions.length,
+    round.bestStreak
+  ].join('\t');
+  var bonusLine = round.bonusAttempted > 0
+    ? '<div class="of">⭐ ' + round.bonusCount + '/' + round.bonusAttempted + ' bonus rounds completed (+' + round.bonusScore + ' pts)</div>'
+    : '';
+  root.innerHTML =
+    '<div class="score-hero"><div class="eyebrow">Round complete</div>' +
+    '<div class="big mono">' + round.score + '</div>' +
+    '<div class="of">base max ' + round.maxScore + ' (' + pct + '%) · best streak 🔥 ' + round.bestStreak + '</div>' +
+    bonusLine +
+    (isBest ? '<div class="newbest">New best score!</div>' : '') +
+    celebrate +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="eyebrow">By topic</div>' +
+      '<table class="topic-table"><thead><tr><th>Topic</th><th>Correct</th><th>Points</th></tr></thead><tbody>' + topicRows + '</tbody></table>' +
+      '<div class="end-actions"><button class="btn primary" id="againBtn">Play again</button>' +
+      '<button class="btn" id="homeBtn">Back to start</button></div>' +
+      '<div class="submit-card">' +
+        '<div class="eyebrow">Send your score to your teacher</div>' +
+        '<p>Tap the button, then paste the row as a new line in your teacher\'s Google Sheet — pasting into a single cell splits it into columns automatically.</p>' +
+        '<textarea class="result-row mono" id="resultRow" rows="1" readonly>' + esc(resultRowValue) + '</textarea>' +
+        '<div class="result-cols">Columns: Name · Date · Score · Base max · % · Correct · Best streak</div>' +
+        '<button class="btn primary" id="copyRowBtn" style="margin-top:10px;">📤 Enviar al maestro</button>' +
+        '<div class="copy-status" id="copyStatus" hidden></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="section-title">Review missed questions (' + missed.length + ')</div>' +
+    missedHtml;
+  document.getElementById('againBtn').onclick = startRound;
+  document.getElementById('homeBtn').onclick = goHome;
+  var sheetPayload = {
+    name: round.studentName || '(no name)',
+    date: whenStr,
+    score: round.score,
+    maxScore: round.maxScore,
+    pct: pct + '%',
+    correct: correctCount + '/' + round.questions.length,
+    bestStreak: round.bestStreak
+  };
+  function copyRowFallback(){
+    var ta = document.getElementById('resultRow');
+    var statusEl = document.getElementById('copyStatus');
+    function showCopied(msg){
+      statusEl.textContent = msg;
+      statusEl.hidden = false;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(resultRowValue).then(function(){
+        showCopied('✓ Copiado — pégalo como fila nueva en la hoja de tu maestro.');
+      }).catch(function(){
+        ta.focus(); ta.select();
+        showCopied('No se pudo copiar solo — el texto ya está seleccionado, presiona Ctrl+C (o Cmd+C).');
+      });
+    } else {
+      ta.focus(); ta.select();
+      showCopied('Presiona Ctrl+C (o Cmd+C) para copiar la fila seleccionada.');
+    }
+  }
+  document.getElementById('copyRowBtn').onclick = function(){
+    var statusEl = document.getElementById('copyStatus');
+    if (!SHEET_WEBAPP_URL) { copyRowFallback(); return; }
+    statusEl.textContent = 'Enviando…';
+    statusEl.hidden = false;
+    fetch(SHEET_WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(sheetPayload)
+    }).then(function(){
+      statusEl.textContent = '✓ Enviado automáticamente a la hoja de tu maestro.';
+    }).catch(function(){
+      copyRowFallback();
+    });
+  };
+}
+
+/* ================= vocab home ================= */
+function vocabHomeHTML(){
+  return '<div class="hero"><div class="eyebrow">Physics vocabulary</div>' +
+    '<h1>Word Games</h1>' +
+    '<p>Practice the key terms from all five topics with three quick activities.</p></div>' +
+    '<div class="mode-grid">' +
+      '<button class="mode-card" id="modeWs"><span class="ic">🔎</span><span class="txt"><b>Word Search</b><span>Find all 20 vocabulary words hidden in the grid.</span></span></button>' +
+      '<button class="mode-card" id="modeCw"><span class="ic">✏️</span><span class="txt"><b>Crossword</b><span>Solve 10 clues and fill in the grid.</span></span></button>' +
+      '<button class="mode-card" id="modeTt"><span class="ic">⌨️</span><span class="txt"><b>Type the Term</b><span>Read a definition, type the matching word.</span></span></button>' +
+    '</div>' +
+    '<button class="back-link" id="backToStart" style="margin-top:18px;">← Back to Physics Challenge</button>';
+}
+function wireVocabHome(){
+  document.getElementById('modeWs').onclick = function(){ startWordSearch(); };
+  document.getElementById('modeCw').onclick = function(){ startCrossword(); };
+  document.getElementById('modeTt').onclick = function(){ startTypeTerm(); };
+  document.getElementById('backToStart').onclick = goHome;
+}
+
+/* ================= word search ================= */
+var wsState = null;
+function startWordSearch(){
+  wsState = {
+    found: {},          // word -> true
+    foundCells: {},      // "r,c" -> true
+    selecting: false,
+    startCell: null,
+    curCell: null,
+    startedAt: Date.now()
+  };
+  screen = 'wordsearch';
+  render();
+}
+function wsCellKey(r, c){ return r + ',' + c; }
+function wsLineCells(r0, c0, r1, c1){
+  var dr = r1 - r0, dc = c1 - c0;
+  var adr = Math.abs(dr), adc = Math.abs(dc);
+  if (!(dr === 0 || dc === 0 || adr === adc)) return null;
+  var steps = Math.max(adr, adc);
+  var sr = dr === 0 ? 0 : dr / steps;
+  var sc = dc === 0 ? 0 : dc / steps;
+  var cells = [];
+  for (var i = 0; i <= steps; i++) cells.push([r0 + sr * i, c0 + sc * i]);
+  return cells;
+}
+function wsCheckSelection(cells){
+  var forward = cells.map(function(rc){ return WS_DATA.grid[rc[0]][rc[1]]; }).join('');
+  var backward = forward.split('').reverse().join('');
+  for (var i = 0; i < WS_DATA.placements.length; i++) {
+    var p = WS_DATA.placements[i];
+    if (wsState.found[p.word]) continue;
+    if (p.word === forward || p.word === backward) return p;
+  }
+  return null;
+}
+function wordSearchHTML(){
+  var total = WS_DATA.placements.length;
+  var foundCount = Object.keys(wsState.found).length;
+  var wordsHtml = WS_DATA.placements.map(function(p){
+    var cls = wsState.found[p.word] ? ' found' : '';
+    return '<span class="ws-chip' + cls + '">' + esc(p.word) + '</span>';
+  }).join('');
+  var gridHtml = WS_DATA.grid.map(function(row, r){
+    return row.split('').map(function(ch, c){
+      var key = wsCellKey(r, c);
+      var cls = '';
+      if (wsState.foundCells[key]) cls = ' found';
+      else if (wsState.selecting && wsState.curCell) {
+        var line = wsLineCells(wsState.startCell[0], wsState.startCell[1], wsState.curCell[0], wsState.curCell[1]);
+        if (line && line.some(function(rc){ return rc[0] === r && rc[1] === c; })) cls = ' selecting';
+      }
+      return '<div class="ws-cell' + cls + '" data-r="' + r + '" data-c="' + c + '">' + ch + '</div>';
+    }).join('');
+  }).join('');
+  var done = foundCount === total;
+  var doneBanner = done ? '<div class="celebrate" style="text-align:center; margin-top:14px;">✨ All ' + total + ' words found!</div>' : '';
+  return '<button class="back-link" id="backToVocab">← Word Games</button>' +
+    '<div class="hero" style="padding-block:4px 8px;"><h1 style="font-size:26px;">Word Search</h1>' +
+    '<p>Click or drag from the first letter to the last letter of a word.</p></div>' +
+    '<div class="progress-track" style="margin-bottom:14px;"><div class="progress-fill" style="width:' + Math.round(foundCount/total*100) + '%"></div></div>' +
+    '<div class="ws-wordlist">' + wordsHtml + '</div>' +
+    '<div class="ws-grid-wrap"><div class="ws-grid" id="wsGrid" style="grid-template-columns:repeat(' + WS_DATA.size + ',1fr);">' + gridHtml + '</div></div>' +
+    doneBanner +
+    '<div class="end-actions" style="justify-content:center; margin-top:18px;"><button class="btn" id="wsReset">Clear progress</button></div>';
+}
+function wsCellFromPoint(x, y){
+  var el = document.elementFromPoint(x, y);
+  if (!el || !el.classList || !el.classList.contains('ws-cell')) return null;
+  return [parseInt(el.dataset.r, 10), parseInt(el.dataset.c, 10)];
+}
+function wsOnDown(r, c){
+  wsState.selecting = true;
+  wsState.startCell = [r, c];
+  wsState.curCell = [r, c];
+  render();
+}
+function wsOnMove(r, c){
+  if (!wsState || !wsState.selecting) return;
+  if (wsState.curCell && wsState.curCell[0] === r && wsState.curCell[1] === c) return;
+  wsState.curCell = [r, c];
+  render();
+}
+function wsOnUp(){
+  if (!wsState || !wsState.selecting) return;
+  wsState.selecting = false;
+  if (wsState.startCell && wsState.curCell) {
+    var line = wsLineCells(wsState.startCell[0], wsState.startCell[1], wsState.curCell[0], wsState.curCell[1]);
+    if (line) {
+      var match = wsCheckSelection(line);
+      if (match) {
+        wsState.found[match.word] = true;
+        match.cells.forEach(function(rc){ wsState.foundCells[wsCellKey(rc[0], rc[1])] = true; });
+      }
+    }
+  }
+  wsState.startCell = null;
+  wsState.curCell = null;
+  render();
+}
+// attached once for the life of the page; each handler checks wsState itself,
+// so it's a no-op whenever the word-search screen isn't active or no drag is in progress
+window.addEventListener('pointerup', wsOnUp);
+
+function wireWordSearch(){
+  document.getElementById('backToVocab').onclick = goVocabHome;
+  document.getElementById('wsReset').onclick = startWordSearch;
+  var gridEl = document.getElementById('wsGrid');
+  gridEl.querySelectorAll('.ws-cell').forEach(function(cell){
+    cell.addEventListener('pointerdown', function(e){
+      e.preventDefault();
+      wsOnDown(parseInt(cell.dataset.r, 10), parseInt(cell.dataset.c, 10));
+    });
+  });
+  gridEl.addEventListener('pointermove', function(e){
+    if (!wsState.selecting) return;
+    var rc = wsCellFromPoint(e.clientX, e.clientY);
+    if (rc) wsOnMove(rc[0], rc[1]);
+  });
+}
+
+/* ================= crossword ================= */
+var cwState = null;
+function startCrossword(){
+  cwState = { answers: {}, checked: false };
+  screen = 'crossword';
+  render();
+}
+function cwKey(r, c){ return r + ',' + c; }
+function cwFilled(r, c){
+  return r >= 0 && r < CW_DATA.height && c >= 0 && c < CW_DATA.width && CW_DATA.grid[r][c] !== null;
+}
+function crosswordHTML(){
+  var numbers = {};
+  CW_DATA.entries.forEach(function(e){ numbers[cwKey(e.row, e.col)] = e.number; });
+  var cellsHtml = '';
+  for (var r = 0; r < CW_DATA.height; r++) {
+    for (var c = 0; c < CW_DATA.width; c++) {
+      var letter = CW_DATA.grid[r][c];
+      if (letter === null) {
+        cellsHtml += '<div class="cw-cell blocked"></div>';
+        continue;
+      }
+      var key = cwKey(r, c);
+      var val = cwState.answers[key] || '';
+      var cls = '';
+      if (cwState.checked) cls = (val === letter) ? ' correct' : (val ? ' wrong' : '');
+      var num = numbers[key] ? '<span class="cw-num">' + numbers[key] + '</span>' : '';
+      cellsHtml += '<div class="cw-cell">' + num +
+        '<input maxlength="1" class="cw-input' + cls + '" data-r="' + r + '" data-c="' + c + '" value="' + esc(val) + '"></div>';
+    }
+  }
+  var across = CW_DATA.entries.filter(function(e){ return e.dir === 'across'; });
+  var down = CW_DATA.entries.filter(function(e){ return e.dir === 'down'; });
+  function clueLi(e){ return '<li><b>' + e.number + '.</b>' + esc(e.clue) + '</li>'; }
+  var correctCount = 0, totalCells = 0;
+  for (var rr = 0; rr < CW_DATA.height; rr++) for (var cc = 0; cc < CW_DATA.width; cc++) {
+    if (CW_DATA.grid[rr][cc] !== null) {
+      totalCells++;
+      if ((cwState.answers[cwKey(rr, cc)] || '') === CW_DATA.grid[rr][cc]) correctCount++;
+    }
+  }
+  var allCorrect = cwState.checked && correctCount === totalCells;
+  var resultLine = cwState.checked
+    ? '<div class="celebrate" style="text-align:center; margin-top:10px;">' + (allCorrect ? '✨ Crossword complete!' : correctCount + '/' + totalCells + ' letters correct — keep going.') + '</div>'
+    : '';
+  return '<button class="back-link" id="backToVocab">← Word Games</button>' +
+    '<div class="hero" style="padding-block:4px 8px;"><h1 style="font-size:26px;">Crossword</h1>' +
+    '<p>Type one letter per box. Use the clues below.</p></div>' +
+    '<div class="cw-grid-wrap"><div class="cw-grid" style="grid-template-columns:repeat(' + CW_DATA.width + ',28px);">' + cellsHtml + '</div></div>' +
+    resultLine +
+    '<div class="end-actions" style="justify-content:center; margin-top:16px;"><button class="btn primary" id="cwCheck">Check answers</button><button class="btn" id="cwReset">Clear</button></div>' +
+    '<div class="clue-cols">' +
+      '<div><div class="eyebrow">Across</div><ul class="clue-list">' + across.map(clueLi).join('') + '</ul></div>' +
+      '<div><div class="eyebrow">Down</div><ul class="clue-list">' + down.map(clueLi).join('') + '</ul></div>' +
+    '</div>';
+}
+function wireCrossword(){
+  document.getElementById('backToVocab').onclick = goVocabHome;
+  document.getElementById('cwReset').onclick = startCrossword;
+  document.getElementById('cwCheck').onclick = function(){ cwState.checked = true; render(); };
+  var inputs = document.querySelectorAll('.cw-input');
+  inputs.forEach(function(inp){
+    inp.addEventListener('input', function(){
+      var r = parseInt(inp.dataset.r, 10), c = parseInt(inp.dataset.c, 10);
+      var v = inp.value.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(-1);
+      cwState.answers[cwKey(r, c)] = v;
+      cwState.checked = false;
+      var focusTarget = [r, c];
+      if (v) {
+        if (cwFilled(r, c + 1)) focusTarget = [r, c + 1];
+        else if (cwFilled(r + 1, c)) focusTarget = [r + 1, c];
+      }
+      render();
+      var el = document.querySelector('.cw-input[data-r="' + focusTarget[0] + '"][data-c="' + focusTarget[1] + '"]');
+      if (el) { el.focus(); el.select(); }
+    });
+    inp.addEventListener('keydown', function(e){
+      var r = parseInt(inp.dataset.r, 10), c = parseInt(inp.dataset.c, 10);
+      if (e.key === 'Backspace' && !inp.value) {
+        var prevSel = cwFilled(r, c - 1) ? [r, c-1] : cwFilled(r - 1, c) ? [r-1, c] : null;
+        if (prevSel) {
+          var prevEl = document.querySelector('.cw-input[data-r="' + prevSel[0] + '"][data-c="' + prevSel[1] + '"]');
+          if (prevEl) prevEl.focus();
+        }
+      }
+    });
+  });
+}
+
+/* ================= type the term ================= */
+var ttState = null;
+function normalizeTerm(s){
+  return String(s).toUpperCase().trim().replace(/\s+/g, '');
+}
+function startTypeTerm(){
+  ttState = { items: shuffle(VOCAB), idx: 0, correct: 0, log: [], answeredCurrent: false };
+  screen = 'typeterm';
+  render();
+}
+function typeTermHTML(){
+  var item = ttState.items[ttState.idx];
+  var pct = Math.round(ttState.idx / ttState.items.length * 100);
+  var feedback = '';
+  if (ttState.answeredCurrent) {
+    var last = ttState.log[ttState.log.length - 1];
+    var cls = last.isCorrect ? 'ok' : 'no';
+    var verdict = last.isCorrect ? '✓ Correct!' : '✗ Not quite — correct answer: ' + esc(item.word);
+    feedback = '<div class="feedback ' + cls + '"><div class="verdict">' + verdict + '</div></div>' +
+      '<div class="nav-row"><button class="btn primary" id="ttNextBtn">' +
+      (ttState.idx < ttState.items.length - 1 ? 'Next word →' : 'See results →') + '</button></div>';
+  }
+  return '<button class="back-link" id="backToVocab">← Word Games</button>' +
+    '<div class="topbar"><div class="progress-wrap"><div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+    '<div class="progress-label"><span>Word ' + (ttState.idx + 1) + ' of ' + ttState.items.length + '</span></div></div>' +
+    '<div class="score-badge mono">' + ttState.correct + '/' + ttState.items.length + '</div></div>' +
+    '<div class="card q-card">' +
+      '<div class="badge-row"><span class="badge" style="background:' + (TOPIC_COLOR[item.topic] || 'var(--accent)') + '; color:#fff;">' + esc(item.topic) + '</span></div>' +
+      '<div class="q-type">Type the term this describes</div>' +
+      '<div class="tt-prompt">' + esc(item.clue) + '</div>' +
+      (ttState.answeredCurrent ? '' : '<div class="calc-row"><input type="text" id="ttInput" placeholder="your answer" autocomplete="off" autocapitalize="characters"><button class="btn primary" id="ttCheckBtn">Check</button></div>') +
+      feedback +
+    '</div>';
+}
+function wireTypeTerm(){
+  document.getElementById('backToVocab').onclick = goVocabHome;
+  if (!ttState.answeredCurrent) {
+    var inp = document.getElementById('ttInput');
+    var btn = document.getElementById('ttCheckBtn');
+    function submit(){
+      var item = ttState.items[ttState.idx];
+      var given = inp.value || '';
+      var isCorrect = normalizeTerm(given) === normalizeTerm(item.word);
+      if (isCorrect) ttState.correct++;
+      ttState.log.push({ item: item, given: given, isCorrect: isCorrect });
+      ttState.answeredCurrent = true;
+      render();
+    }
+    btn.onclick = submit;
+    inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
+    inp.focus();
+  } else {
+    document.getElementById('ttNextBtn').onclick = function(){
+      if (ttState.idx < ttState.items.length - 1) {
+        ttState.idx++;
+        ttState.answeredCurrent = false;
+        render();
+      } else {
+        screen = 'typetermEnd';
+        render();
+      }
+    };
+  }
+}
+function typeTermEndHTML(){
+  var total = ttState.items.length;
+  var pct = Math.round(ttState.correct / total * 100);
+  var missed = ttState.log.filter(function(e){ return !e.isCorrect; });
+  var missedHtml = missed.length === 0
+    ? '<p style="margin-top:8px;">Perfect — every term correct.</p>'
+    : missed.map(function(e){
+        return '<div class="review-item"><div class="q">' + esc(e.item.word) + '</div>' +
+          '<div class="meta">' + esc(e.item.clue) + '</div></div>';
+      }).join('');
+  return '<div class="score-hero"><div class="eyebrow">Word practice complete</div>' +
+    '<div class="big mono">' + ttState.correct + '/' + total + '</div>' +
+    '<div class="of">' + pct + '% correct</div></div>' +
+    '<div class="card"><div class="end-actions"><button class="btn primary" id="ttAgain">Try again</button><button class="btn" id="ttHome">Word Games</button></div></div>' +
+    '<div class="section-title">Review (' + missed.length + ' missed)</div>' + missedHtml;
+}
+
+render();
+
+})();
+</script>
